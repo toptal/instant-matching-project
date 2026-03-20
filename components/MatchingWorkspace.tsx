@@ -125,6 +125,7 @@ export default function MatchingWorkspace() {
                 {/* Candidates card stack */}
                 <AISnippetTalents />
 
+
               </div>
             </div>
 
