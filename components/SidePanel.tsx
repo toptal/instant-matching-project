@@ -33,7 +33,7 @@ export default function SidePanel() {
 
       {/* Navigation rows */}
       <div className="flex flex-col">
-        <NavRow label="Job Details" disabled />
+        <NavRow label="Job Details" badge="Updated" />
         <Separator />
         <NavRow label="Candidates" disabled />
         <Separator />
