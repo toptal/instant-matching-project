@@ -4,6 +4,8 @@ import VideoSnippet from "./VideoSnippet";
 import ChatInput from "./ChatInput";
 import SidePanel from "./SidePanel";
 import AISnippetSteps from "./AISnippetSteps";
+import AISnippetRequirements from "./AISnippetRequirements";
+import AISnippetTalents from "./AISnippetTalents";
 
 export default function MatchingWorkspace() {
   return (
@@ -91,6 +93,38 @@ export default function MatchingWorkspace() {
                 <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
                   Can we jump to your requirements?
                 </p>
+
+                {/* User message */}
+                <div className="flex justify-end">
+                  <div
+                    className="text-[14px] leading-[22px] px-4 py-2 rounded-2xl max-w-[80%]"
+                    style={{ background: "#F3F4F6", color: "#1a1a2e" }}
+                  >
+                    Yes, let&apos;s use the voice mode
+                  </div>
+                </div>
+
+                {/* AI: JD intro */}
+                <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+                  Here&apos;s what we understand about your role so far.
+                </p>
+
+                {/* Job Details card */}
+                <AISnippetRequirements />
+
+                {/* AI: candidates intro */}
+                <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+                  <p className="mb-1">Please review the three automatically matched candidates:</p>
+                  <ul className="list-disc pl-5 flex flex-col gap-0.5">
+                    <li>Mark each profile as Interested or Not a fit</li>
+                    <li>You may already find the right match here</li>
+                    <li>If not, your feedback helps us improve future recommendations or involve a matcher for a more curated selection</li>
+                  </ul>
+                </div>
+
+                {/* Candidates card stack */}
+                <AISnippetTalents />
+
 
               </div>
             </div>
