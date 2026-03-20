@@ -2,7 +2,7 @@ export default function MatcherCard() {
   return (
     <div className="flex flex-col gap-3">
       {/* Photo card with rounded corners */}
-      <div className="relative rounded-xl overflow-hidden" style={{ height: 160 }}>
+      <div className="relative overflow-hidden" style={{ height: 160 }}>
         <div
           className="absolute inset-0"
           style={{
