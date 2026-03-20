@@ -2,6 +2,7 @@ import ToptalLogo from "./ToptalLogo";
 import IndicatorContainer from "./IndicatorContainer";
 import VideoSnippet from "./VideoSnippet";
 import ChatInput from "./ChatInput";
+import SidePanel from "./SidePanel";
 
 export default function MatchingWorkspace() {
   return (
@@ -13,22 +14,32 @@ export default function MatchingWorkspace() {
       </div>
 
       {/* Centered card — full page height */}
-      <div className="flex justify-center" style={{ minHeight: "100vh", padding: "16px 0" }}>
+      <div className="flex justify-center items-start" style={{ minHeight: "100vh", padding: "16px 0" }}>
+        {/* Card: 1024px wide, fixed height, 24px padding all around, flex row with 16px gap */}
         <div
-          className="relative bg-white rounded-2xl overflow-hidden"
+          className="bg-white rounded-2xl"
           style={{
-            width: 648,
-            minHeight: "calc(100vh - 32px)",
+            width: 1024,
+            height: "calc(100vh - 32px)",
             boxShadow: "0 4px 32px rgba(0,0,0,0.10)",
+            display: "flex",
+            flexDirection: "row",
+            padding: 24,
+            gap: 16,
           }}
         >
-          {/* LeftContainer — scrollable thread + fixed input */}
+          {/* Left — 600px fixed */}
           <div
-            className="absolute inset-y-0 left-0 flex flex-col"
-            style={{ width: "100%" }}
+            style={{
+              flex: "0 0 600px",
+              width: 600,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
           >
             {/* Heading */}
-            <div className="shrink-0 px-6 pt-8 pb-4 bg-white z-10">
+            <div className="shrink-0 pb-4">
               <h1
                 className="font-bold leading-tight mb-2"
                 style={{ fontSize: 26, color: "#1a1a2e", letterSpacing: "-0.3px" }}
@@ -39,7 +50,7 @@ export default function MatchingWorkspace() {
             </div>
 
             {/* Scrollable thread */}
-            <div className="flex-1 overflow-y-auto px-6">
+            <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-4 pb-4">
                 <p className="font-semibold text-[16px]" style={{ color: "#1a1a2e" }}>
                   Welcome to your Matching Workspace.
@@ -52,15 +63,20 @@ export default function MatchingWorkspace() {
               </div>
             </div>
 
-            {/* Fixed-to-bottom input */}
+            {/* Input pinned to bottom */}
             <div
-              className="shrink-0 px-6 pb-6 pt-3"
+              className="shrink-0 pt-3"
               style={{
                 background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 24%)",
               }}
             >
               <ChatInput />
             </div>
+          </div>
+
+          {/* Right — 360px fixed, full height via stretch */}
+          <div style={{ flex: "0 0 360px", width: 360 }}>
+            <SidePanel />
           </div>
         </div>
       </div>
