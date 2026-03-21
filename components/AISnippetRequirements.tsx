@@ -25,11 +25,10 @@ export default function AISnippetRequirements() {
       </div>
 
       {/* Content — fixed height, scrollable */}
-      <div className="flex overflow-hidden" style={{ height: 320 }}>
-        <div
-          className="flex-1 overflow-y-auto text-[14px] leading-[22px] px-4 pb-4"
-          style={{ color: "#455065" }}
-        >
+      <div
+        className="overflow-y-auto text-[14px] leading-[22px] px-4 pb-4"
+        style={{ height: 320, color: "#455065" }}
+      >
           <p className="font-semibold mb-1">About the job</p>
           <p className="mb-3">
             We are looking for a skilled Front-End Developer to join our team and help create
@@ -66,19 +65,6 @@ export default function AISnippetRequirements() {
             This is an exciting opportunity to contribute to projects with real impact and grow in
             a dynamic team environment. Let&apos;s create amazing digital experiences together!
           </p>
-        </div>
-
-        {/* Scrollbar track */}
-        <div
-          className="shrink-0 flex items-start justify-center py-6"
-          style={{
-            width: 14,
-            background: "#FCFCFC",
-            borderLeft: "1px solid #EBECED",
-          }}
-        >
-          <div className="rounded-full" style={{ width: 6, height: 60, background: "#C4C6CA" }} />
-        </div>
       </div>
     </div>
   );
