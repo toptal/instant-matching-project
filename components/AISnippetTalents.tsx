@@ -151,7 +151,7 @@ export default function AISnippetTalents() {
 
   return (
     <>
-      <div className="relative" style={{ width: 600, height: 395 }}>
+      <div className="relative w-full" style={{ height: 395 }}>
         {/* Ghost cards */}
         {stackCards.slice(0, -1).map((idx, pos) => {
           const isMiddle = pos === stackCards.length - 2;
@@ -162,7 +162,7 @@ export default function AISnippetTalents() {
               style={{
                 left: isMiddle ? 33 : 61,
                 top: isMiddle ? 53 : 99,
-                width: isMiddle ? 534 : 478,
+                width: isMiddle ? "calc(100% - 66px)" : "calc(100% - 122px)",
                 height: isMiddle ? 296 : 265,
                 border: "1px solid #EBECED",
                 boxShadow: "0 0 8px rgba(0,0,0,0.08)",
@@ -178,7 +178,7 @@ export default function AISnippetTalents() {
           <div
             className="absolute flex gap-6 rounded-sm"
             style={{
-              left: 0, top: 0, width: 600,
+              left: 0, top: 0, width: "100%",
               border: `1.5px solid ${decision === "interested" ? "#03B080" : "#EBECED"}`,
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
               background: "white",
