@@ -11,13 +11,13 @@ export default function VideoSnippet() {
     <div className="flex flex-col gap-4">
       {/* Video card */}
       <div
-        className="rounded-xl overflow-hidden"
-        style={{ border: "1px solid #EBECED", width: 440 }}
+        className="rounded-xl overflow-hidden w-full"
+        style={{ border: "1px solid #EBECED" }}
       >
         {/* Thumbnail — warm photo-like gradient */}
         <div
-          className="relative flex items-center justify-center"
-          style={{ width: 440, height: 272 }}
+          className="relative flex items-center justify-center w-full"
+          style={{ height: 272 }}
         >
           <div
             className="absolute inset-0"

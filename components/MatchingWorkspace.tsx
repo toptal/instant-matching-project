@@ -51,7 +51,7 @@ export default function MatchingWorkspace() {
             </div>
 
             {/* Scrollable thread */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden pr-4">
               <div className="flex flex-col gap-4 pb-4">
 
                 {/* AI: welcome heading */}
