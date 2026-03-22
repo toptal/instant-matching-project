@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MatcherCard from "./MatcherCard";
 import NavRow from "./NavRow";
 import MatcherTooltip from "./MatcherTooltip";
 import JobDetailsPanel from "./JobDetailsPanel";
 import CandidatesPanel from "./CandidatesPanel";
+import { usePhase } from "@/context/PhaseContext";
 
 type ActivePanel = "default" | "job-details" | "candidates";
 
@@ -14,8 +15,13 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
+  const { tooltipTriggerCount } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (tooltipTriggerCount > 0) setShowTooltip(true);
+  }, [tooltipTriggerCount]);
 
   const translateX =
     activePanel === "default"

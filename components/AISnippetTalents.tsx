@@ -24,7 +24,11 @@ function SkillPill({ label }: { label: string }) {
   );
 }
 
-export default function AISnippetTalents() {
+interface Props {
+  onPass?: (candidateName: string) => void;
+}
+
+export default function AISnippetTalents({ onPass }: Props) {
   const [decisions, setDecisions] = useState<Decision[]>([null, null, null]);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
@@ -33,6 +37,11 @@ export default function AISnippetTalents() {
     const next = [...decisions];
     next[index] = decision;
     setDecisions(next);
+
+    // Fire pass callback on first "not-a-fit" decision
+    if (decision === "not-a-fit" && decisions[index] === null) {
+      onPass?.(CANDIDATES[index].name);
+    }
 
     // Advance front card if we just decided the current front
     if (index === frontIndex && frontIndex < CANDIDATES.length - 1) {
@@ -136,8 +145,15 @@ export default function AISnippetTalents() {
             <div className="flex-1 flex flex-col gap-4 min-w-0">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] leading-[20px] text-black">Why this might be a fit:</span>
-                <div className="px-2 py-0.5 rounded-lg text-[12px] font-semibold leading-[18px]" style={{ border: "1px solid #6727CF", color: "#6727CF" }}>
-                  {c.badge}
+                <div
+                  className="px-2 py-0.5 rounded-lg text-[12px] font-semibold leading-[18px]"
+                  style={
+                    c.source === "matcher"
+                      ? { border: "1px solid #03B080", color: "#03B080" }
+                      : { border: "1px solid #6727CF", color: "#6727CF" }
+                  }
+                >
+                  {c.source === "matcher" ? `Suggested by ${c.matcherName}` : c.badge}
                 </div>
               </div>
               <div className="flex flex-col gap-2">

@@ -4,6 +4,8 @@ export type Candidate = {
   name: string;
   role: string;
   badge: string;
+  source: "system" | "matcher";
+  matcherName?: string;
   reasons: Array<{ pre?: string; bold: string; post?: string }>;
   skills: string[];
   canStart: string;
@@ -23,6 +25,7 @@ export const CANDIDATES: Candidate[] = [
     name: "Kimberly Saxton",
     role: "Frontend Developer",
     badge: "Auto-matched",
+    source: "system",
     reasons: [
       { bold: "8 years", post: " building financial platforms at scale" },
       { bold: "Led migration to microservices", post: " at previous role" },
@@ -59,6 +62,7 @@ export const CANDIDATES: Candidate[] = [
     name: "Marcus Chen",
     role: "Full-Stack Developer",
     badge: "Auto-matched",
+    source: "system",
     reasons: [
       { bold: "6 years", post: " in Node.js and React ecosystems" },
       { bold: "Built scalable APIs", post: " serving 1M+ users" },
@@ -86,6 +90,8 @@ export const CANDIDATES: Candidate[] = [
     name: "Priya Sharma",
     role: "Backend Developer",
     badge: "Auto-matched",
+    source: "matcher",
+    matcherName: "Steven",
     reasons: [
       { bold: "5 years", post: " in cloud-native backend development" },
       { bold: "Microservices specialist", post: " with AWS expertise" },
