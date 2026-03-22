@@ -134,6 +134,10 @@ function renderMessage(msg: Message) {
 export default function MatchingWorkspace() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeOptions, setActiveOptions] = useState<string[] | null>([
+    "Yes, let's use the voice mode",
+    "Yes, let's chat",
+  ]);
   const threadRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
 
@@ -146,6 +150,16 @@ export default function MatchingWorkspace() {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages]);
+
+  function handleOptionSelect(option: string) {
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      type: "user-text",
+      content: option,
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    setActiveOptions(null);
+  }
 
   function handleSend(text: string) {
     const userMsg: Message = {
@@ -232,20 +246,20 @@ export default function MatchingWorkspace() {
                   background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 24%)",
                 }}
               >
-                <div className="flex gap-2">
-                  <button
-                    className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
-                    style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
-                  >
-                    Yes, let&apos;s use the voice mode
-                  </button>
-                  <button
-                    className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
-                    style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
-                  >
-                    Yes, let&apos;s chat
-                  </button>
-                </div>
+                {activeOptions && (
+                  <div className="flex gap-2">
+                    {activeOptions.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => handleOptionSelect(opt)}
+                        className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
+                        style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <ChatInput onSend={handleSend} isLoading={isLoading} />
               </div>
             </div>
