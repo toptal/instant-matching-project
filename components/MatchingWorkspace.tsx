@@ -11,6 +11,8 @@ import AISnippetRequirements from "./AISnippetRequirements";
 import AISnippetTalents from "./AISnippetTalents";
 import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 
+const TOOLTIP_KEYWORDS = ["requirements", "matcher", "help", "adjust", "refine", "struggling", "not sure", "unsure", "change"];
+
 type Message =
   | { id: string; type: "ai-heading"; content: string }
   | { id: string; type: "ai-text"; content: React.ReactNode }
@@ -128,7 +130,7 @@ function TypingIndicator() {
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner() {
-  const { setActivePhase } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, markJobDetailsUpdated } = usePhase();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
   const [activeOptions, setActiveOptions] = useState<string[] | null>([
@@ -180,11 +182,17 @@ function WorkspaceInner() {
     if (action === "jd-confirm") {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
+        markJobDetailsUpdated(); // US-027: mark JD as updated for badge
         appendAI("Requirements locked in. Your matched candidates are ready to review.");
       } else {
         appendAI("Of course! What would you like to change about the job description?");
       }
     }
+  }
+
+  function handlePass(candidateName: string) {
+    setIsLoading(true);
+    appendAI(`Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`);
   }
 
   function handleSend(text: string) {
@@ -194,6 +202,12 @@ function WorkspaceInner() {
     ]);
     setIsLoading(true);
     appendAI("Got it — I'll take note of that.");
+
+    // Keyword detection for matcher tooltip (US-029)
+    const lower = text.toLowerCase();
+    if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
+      triggerMatcherTooltip();
+    }
   }
 
   function renderMessage(msg: Message) {
@@ -245,7 +259,7 @@ function WorkspaceInner() {
       case "snippet-requirements":
         return <AISnippetRequirements />;
       case "snippet-talents":
-        return <AISnippetTalents />;
+        return <AISnippetTalents onPass={handlePass} />;
     }
   }
 

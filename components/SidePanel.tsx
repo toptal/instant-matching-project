@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MatcherCard from "./MatcherCard";
 import NavRow from "./NavRow";
 import MatcherTooltip from "./MatcherTooltip";
 import JobDetailsPanel from "./JobDetailsPanel";
 import CandidatesPanel from "./CandidatesPanel";
+import { usePhase } from "@/context/PhaseContext";
 
 type ActivePanel = "default" | "job-details" | "candidates";
 
@@ -14,8 +15,18 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
+  const { tooltipTriggerCount, jobDetailsUpdated, markJobDetailsViewed, interestedCount } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (tooltipTriggerCount > 0) setShowTooltip(true);
+  }, [tooltipTriggerCount]);
+
+  function openJobDetails() {
+    markJobDetailsViewed();
+    setActivePanel("job-details");
+  }
 
   const translateX =
     activePanel === "default"
@@ -82,12 +93,13 @@ export default function SidePanel() {
             <div className="flex flex-col">
               <NavRow
                 label="Job Details"
-                badge="Updated"
-                onClick={() => setActivePanel("job-details")}
+                badge={jobDetailsUpdated ? "Updated" : undefined}
+                onClick={openJobDetails}
               />
               <Separator />
               <NavRow
                 label="Candidates"
+                badge={interestedCount > 0 ? String(interestedCount) : undefined}
                 onClick={() => setActivePanel("candidates")}
               />
               <Separator />

@@ -1,4 +1,5 @@
 import { CANDIDATES } from "@/data/candidates";
+import { usePhase } from "@/context/PhaseContext";
 
 interface Props {
   onBack: () => void;
@@ -15,46 +16,69 @@ function BackIcon() {
 }
 
 export default function CandidatesPanel({ onBack }: Props) {
+  const { candidateDecisions, interestedCount } = usePhase();
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 shrink-0">
-        <button onClick={onBack} className="flex items-center justify-center">
-          <BackIcon />
-        </button>
-        <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>
-          Candidates
-        </span>
+      <div className="flex items-center justify-between px-5 py-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="flex items-center justify-center">
+            <BackIcon />
+          </button>
+          <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>
+            Candidates
+          </span>
+        </div>
+        {interestedCount > 0 && (
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded" style={{ background: "#E6F9F2", color: "#03B080" }}>
+            {interestedCount} shortlisted
+          </span>
+        )}
       </div>
 
       <Separator />
 
       {/* Candidate list */}
       <div className="flex-1 overflow-y-auto">
-        {CANDIDATES.map((c, i) => (
-          <div key={c.name}>
-            <div className="flex items-center gap-3 px-5 py-4">
-              {/* Photo placeholder */}
-              <div
-                className="rounded-full shrink-0"
-                style={{
-                  width: 40,
-                  height: 40,
-                  background: "radial-gradient(ellipse at 50% 30%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
-                }}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold leading-[20px]" style={{ color: "#1a1a2e" }}>
-                  {c.name}
-                </p>
-                <p className="text-[12px] leading-[18px]" style={{ color: "#455065" }}>
-                  {c.role}
-                </p>
+        {CANDIDATES.map((c, i) => {
+          const decision = candidateDecisions[i];
+          return (
+            <div key={c.name}>
+              <div className="flex items-center gap-3 px-5 py-4">
+                {/* Photo placeholder */}
+                <div
+                  className="rounded-full shrink-0"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    background: "radial-gradient(ellipse at 50% 30%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold leading-[20px]" style={{ color: "#1a1a2e" }}>
+                    {c.name}
+                  </p>
+                  <p className="text-[12px] leading-[18px]" style={{ color: "#455065" }}>
+                    {c.role}
+                  </p>
+                </div>
+                {decision && (
+                  <span
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{
+                      background: decision === "interested" ? "#E6F9F2" : "#FEE2E2",
+                      color: decision === "interested" ? "#03B080" : "#E53935",
+                    }}
+                  >
+                    {decision === "interested" ? "Interested" : "Not a fit"}
+                  </span>
+                )}
               </div>
+              {i < CANDIDATES.length - 1 && <Separator />}
             </div>
-            {i < CANDIDATES.length - 1 && <Separator />}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
