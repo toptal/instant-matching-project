@@ -1,12 +1,39 @@
-export default function ChatInput() {
+"use client";
+
+import { useState } from "react";
+
+interface ChatInputProps {
+  onSend: (text: string) => void;
+  isLoading?: boolean;
+}
+
+export default function ChatInput({ onSend, isLoading = false }: ChatInputProps) {
+  const [value, setValue] = useState("");
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (value.trim() && !isLoading) {
+        onSend(value.trim());
+        setValue("");
+      }
+    }
+  }
+
   return (
     <div
       className="rounded-2xl px-4 py-3 flex flex-col gap-3"
       style={{ border: "1.5px solid #EBECED", background: "#fff", minHeight: 80, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
     >
-      <span className="text-[14px]" style={{ color: "#9EA8B3" }}>
-        Write anything...
-      </span>
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Write anything..."
+        rows={1}
+        className="text-[14px] w-full resize-none bg-transparent outline-none border-none placeholder:text-[#9EA8B3]"
+        style={{ color: "#455065", lineHeight: "22px" }}
+      />
       <div className="flex items-center gap-2">
         {/* Voice mode button */}
         <button
