@@ -13,13 +13,15 @@ import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 
 const TOOLTIP_KEYWORDS = ["requirements", "matcher", "help", "adjust", "refine", "struggling", "not sure", "unsure", "change"];
 
+type ConversationStage = "intro" | "await-jd" | "await-q1" | "await-q2" | "candidates" | "open";
+
 type Message =
   | { id: string; type: "ai-heading"; content: string }
   | { id: string; type: "ai-text"; content: React.ReactNode }
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-video" }
   | { id: string; type: "snippet-steps" }
-  | { id: string; type: "snippet-requirements" }
+  | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined" }
   | { id: string; type: "snippet-talents" }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
 
@@ -68,43 +70,6 @@ const INITIAL_MESSAGES: Message[] = [
     type: "ai-text",
     content: "Can we jump to your requirements?",
   },
-  {
-    id: "8",
-    type: "user-text",
-    content: "Yes, let's use the voice mode",
-  },
-  {
-    id: "9",
-    type: "ai-text",
-    content: "Here's what we understand about your role so far.",
-  },
-  { id: "10", type: "snippet-requirements" },
-  {
-    id: "10a",
-    type: "ai-text",
-    content: "Does this look right? Let me know if you'd like to adjust anything.",
-  },
-  {
-    id: "10b",
-    type: "interaction-options",
-    options: ["Yes, looks good", "I'd like to adjust this"],
-    action: "jd-confirm",
-  },
-  {
-    id: "11",
-    type: "ai-text",
-    content: (
-      <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-        <p className="mb-1">Please review the three automatically matched candidates:</p>
-        <ul className="list-disc pl-5 flex flex-col gap-0.5">
-          <li>Mark each profile as Interested or Not a fit</li>
-          <li>You may already find the right match here</li>
-          <li>If not, your feedback helps us improve future recommendations or involve a matcher for a more curated selection</li>
-        </ul>
-      </div>
-    ),
-  },
-  { id: "12", type: "snippet-talents" },
 ];
 
 function TypingIndicator() {
@@ -128,6 +93,11 @@ function TypingIndicator() {
   );
 }
 
+let _uidCounter = 0;
+function uid() {
+  return `msg-${Date.now()}-${++_uidCounter}`;
+}
+
 // Inner component so it can access PhaseContext
 function WorkspaceInner() {
   const { setActivePhase, triggerMatcherTooltip, markJobDetailsUpdated } = usePhase();
@@ -137,8 +107,12 @@ function WorkspaceInner() {
     "Yes, let's use the voice mode",
     "Yes, let's chat",
   ]);
+  const [conversationStage, setConversationStage] = useState<ConversationStage>("intro");
   const threadRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
+  const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const passCountRef = useRef(0);
+  const jdVersion = useRef(0);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -150,13 +124,37 @@ function WorkspaceInner() {
     }
   }, [messages]);
 
-  function appendAI(content: string, delay = 700) {
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now().toString(), type: "ai-text", content },
-      ]);
+  function schedule(fn: () => void, delay: number) {
+    const t = setTimeout(() => {
+      fn();
+    }, delay);
+    pendingTimeouts.current.push(t);
+  }
+
+  function cancelAll() {
+    pendingTimeouts.current.forEach((t) => clearTimeout(t));
+    pendingTimeouts.current = [];
+    setIsLoading(false);
+  }
+
+  function scheduleSequence(steps: Array<{ delay: number; fn: () => void }>) {
+    let accumulated = 0;
+    steps.forEach(({ delay, fn }) => {
+      accumulated += delay;
+      schedule(fn, accumulated);
+    });
+  }
+
+  function appendAI(content: React.ReactNode, delay = 700) {
+    schedule(() => {
+      setMessages((prev) => [...prev, { id: uid(), type: "ai-text", content }]);
       setIsLoading(false);
+    }, delay);
+  }
+
+  function appendMessage(msg: Message, delay: number) {
+    schedule(() => {
+      setMessages((prev) => [...prev, msg]);
     }, delay);
   }
 
@@ -164,10 +162,23 @@ function WorkspaceInner() {
   function handleOptionSelect(option: string) {
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), type: "user-text", content: option },
+      { id: uid(), type: "user-text", content: option },
     ]);
     setActiveOptions(null);
     setActivePhase(2); // advance: Intro → Validate Requirements
+    setIsLoading(true);
+    setConversationStage("await-jd");
+    schedule(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: uid(),
+          type: "ai-text",
+          content: "Great! Describe the role you're looking to fill, or paste a job description. I'll structure it for you.",
+        },
+      ]);
+      setIsLoading(false);
+    }, 700);
   }
 
   // Inline thread interaction-options
@@ -175,7 +186,7 @@ function WorkspaceInner() {
     // Remove the pills message, post user reply
     setMessages((prev) => [
       ...prev.filter((m) => m.id !== msgId),
-      { id: Date.now().toString(), type: "user-text", content: option },
+      { id: uid(), type: "user-text", content: option },
     ]);
     setIsLoading(true);
 
@@ -183,30 +194,350 @@ function WorkspaceInner() {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
         markJobDetailsUpdated(); // US-027: mark JD as updated for badge
-        appendAI("Requirements locked in. Your matched candidates are ready to review.");
+
+        const bulletsContent = (
+          <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+            <p className="mb-1">Please review the three automatically matched candidates:</p>
+            <ul className="list-disc pl-5 flex flex-col gap-0.5">
+              <li>Mark each profile as Interested or Not a fit</li>
+              <li>You may already find the right match here</li>
+              <li>If not, your feedback helps us improve future recommendations or involve a matcher for a more curated selection</li>
+            </ul>
+          </div>
+        );
+
+        scheduleSequence([
+          {
+            delay: 800,
+            fn: () => {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: uid(),
+                  type: "ai-text",
+                  content: "Requirements locked in. Let me pull up your matched candidates.",
+                },
+              ]);
+            },
+          },
+          {
+            delay: 400,
+            fn: () => {
+              setMessages((prev) => [
+                ...prev,
+                { id: uid(), type: "ai-text", content: bulletsContent },
+              ]);
+            },
+          },
+          {
+            delay: 300,
+            fn: () => {
+              setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
+              setIsLoading(false);
+              setConversationStage("candidates");
+            },
+          },
+        ]);
       } else {
-        appendAI("Of course! What would you like to change about the job description?");
+        // "I'd like to adjust this"
+        setConversationStage("await-jd");
+        schedule(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "Of course! What would you like to change about the job description?",
+            },
+          ]);
+          setIsLoading(false);
+        }, 700);
+      }
+    } else if (action === "refine-confirm") {
+      if (option === "Yes, let's refine") {
+        setConversationStage("await-jd");
+        schedule(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "What would you like to change? Describe the adjustment and I'll update the requirements.",
+            },
+          ]);
+          setIsLoading(false);
+        }, 700);
+      } else {
+        // "No, these are fine"
+        schedule(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "No problem. You can continue reviewing the current candidates or reach out if you need adjustments later.",
+            },
+          ]);
+          setIsLoading(false);
+        }, 700);
       }
     }
   }
 
   function handlePass(candidateName: string) {
+    passCountRef.current += 1;
     setIsLoading(true);
-    appendAI(`Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`);
+
+    if (passCountRef.current >= 2) {
+      scheduleSequence([
+        {
+          delay: 700,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "ai-text",
+                content: `Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.`,
+              },
+            ]);
+          },
+        },
+        {
+          delay: 600,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "interaction-options",
+                options: ["Yes, let's refine", "No, these are fine"],
+                action: "refine-confirm",
+              },
+            ]);
+            setIsLoading(false);
+          },
+        },
+      ]);
+    } else {
+      schedule(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: uid(),
+            type: "ai-text",
+            content: `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`,
+          },
+        ]);
+        setIsLoading(false);
+      }, 700);
+    }
+  }
+
+  function handleJDInput(text: string) {
+    if (jdVersion.current === 0) {
+      // Full Q&A flow
+      scheduleSequence([
+        {
+          delay: 1400,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "ai-text",
+                content: "Got it. Here's an initial draft based on what you've shared:",
+              },
+            ]);
+          },
+        },
+        {
+          delay: 100,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              { id: uid(), type: "snippet-requirements", variant: "initial" },
+            ]);
+          },
+        },
+        {
+          delay: 900,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "ai-text",
+                content: "A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?",
+              },
+            ]);
+            setIsLoading(false);
+            setConversationStage("await-q1");
+          },
+        },
+      ]);
+    } else {
+      // Skip Q&A — show updated JD + confirmation
+      scheduleSequence([
+        {
+          delay: 1000,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "ai-text",
+                content: "Got it. Here's the updated job description:",
+              },
+            ]);
+          },
+        },
+        {
+          delay: 100,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              { id: uid(), type: "snippet-requirements", variant: "refined" },
+            ]);
+          },
+        },
+        {
+          delay: 700,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "ai-text",
+                content: "Does this look right? Let me know if you'd like to adjust anything.",
+              },
+            ]);
+          },
+        },
+        {
+          delay: 300,
+          fn: () => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: uid(),
+                type: "interaction-options",
+                options: ["Yes, looks good", "I'd like to adjust this"],
+                action: "jd-confirm",
+              },
+            ]);
+            setIsLoading(false);
+            setConversationStage("open");
+          },
+        },
+      ]);
+      jdVersion.current += 1;
+    }
+  }
+
+  function handleQ1Answer(_text: string) {
+    scheduleSequence([
+      {
+        delay: 900,
+        fn: () => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "Good to know. One more — do you have any timezone preferences for collaboration?",
+            },
+          ]);
+          setIsLoading(false);
+          setConversationStage("await-q2");
+        },
+      },
+    ]);
+  }
+
+  function handleQ2Answer(_text: string) {
+    jdVersion.current += 1;
+    scheduleSequence([
+      {
+        delay: 1000,
+        fn: () => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "Perfect. I've refined the job description with your answers:",
+            },
+          ]);
+        },
+      },
+      {
+        delay: 100,
+        fn: () => {
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), type: "snippet-requirements", variant: "refined" },
+          ]);
+        },
+      },
+      {
+        delay: 700,
+        fn: () => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "ai-text",
+              content: "Does this look right? Let me know if you'd like to adjust anything.",
+            },
+          ]);
+        },
+      },
+      {
+        delay: 300,
+        fn: () => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              type: "interaction-options",
+              options: ["Yes, looks good", "I'd like to adjust this"],
+              action: "jd-confirm",
+            },
+          ]);
+          setIsLoading(false);
+          setConversationStage("open");
+        },
+      },
+    ]);
   }
 
   function handleSend(text: string) {
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), type: "user-text", content: text },
+      { id: uid(), type: "user-text", content: text },
     ]);
     setIsLoading(true);
-    appendAI("Got it — I'll take note of that.");
 
     // Keyword detection for matcher tooltip (US-029)
     const lower = text.toLowerCase();
     if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
       triggerMatcherTooltip();
+    }
+
+    switch (conversationStage) {
+      case "await-jd":
+        handleJDInput(text);
+        break;
+      case "await-q1":
+        handleQ1Answer(text);
+        break;
+      case "await-q2":
+        handleQ2Answer(text);
+        break;
+      default:
+        appendAI("Got it — I'll take note of that.");
+        break;
     }
   }
 
@@ -214,7 +545,10 @@ function WorkspaceInner() {
     switch (msg.type) {
       case "ai-heading":
         return (
-          <p className="font-semibold text-[20px] leading-[30px]" style={{ color: "#455065" }}>
+          <p
+            className="font-semibold text-[20px] leading-[30px]"
+            style={{ color: "#455065", position: "sticky", top: 0, background: "white", zIndex: 10 }}
+          >
             {msg.content}
           </p>
         );
@@ -257,11 +591,14 @@ function WorkspaceInner() {
       case "snippet-steps":
         return <AISnippetSteps />;
       case "snippet-requirements":
-        return <AISnippetRequirements />;
+        return <AISnippetRequirements variant={msg.variant} />;
       case "snippet-talents":
         return <AISnippetTalents onPass={handlePass} />;
     }
   }
+
+  // suppress unused warning — appendMessage is used in scheduleSequence pattern
+  void appendMessage;
 
   return (
     <div className="min-h-screen w-full relative" style={{ background: "#F0F2F5" }}>
@@ -295,7 +632,7 @@ function WorkspaceInner() {
             }}
           >
             {/* Heading */}
-            <div className="shrink-0 pb-4">
+            <div className="shrink-0 pb-4" style={{ position: "sticky", top: 0, background: "white", zIndex: 10 }}>
               <h1
                 className="font-bold leading-tight mb-2"
                 style={{ fontSize: 26, color: "#1a1a2e", letterSpacing: "-0.3px" }}
@@ -336,7 +673,7 @@ function WorkspaceInner() {
                   ))}
                 </div>
               )}
-              <ChatInput onSend={handleSend} isLoading={isLoading} />
+              <ChatInput onSend={handleSend} isLoading={isLoading} onStop={cancelAll} />
             </div>
           </div>
 
