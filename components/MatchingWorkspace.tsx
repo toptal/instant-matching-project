@@ -152,12 +152,6 @@ function WorkspaceInner() {
     }, delay);
   }
 
-  function appendMessage(msg: Message, delay: number) {
-    schedule(() => {
-      setMessages((prev) => [...prev, msg]);
-    }, delay);
-  }
-
   // Pinned bottom pills (mode selection)
   function handleOptionSelect(option: string) {
     setMessages((prev) => [
@@ -545,10 +539,7 @@ function WorkspaceInner() {
     switch (msg.type) {
       case "ai-heading":
         return (
-          <p
-            className="font-semibold text-[20px] leading-[30px]"
-            style={{ color: "#455065", position: "sticky", top: 0, background: "white", zIndex: 10 }}
-          >
+          <p className="font-semibold text-[20px] leading-[30px]" style={{ color: "#455065" }}>
             {msg.content}
           </p>
         );
@@ -596,9 +587,6 @@ function WorkspaceInner() {
         return <AISnippetTalents onPass={handlePass} />;
     }
   }
-
-  // suppress unused warning — appendMessage is used in scheduleSequence pattern
-  void appendMessage;
 
   return (
     <div className="min-h-screen w-full relative" style={{ background: "#F0F2F5" }}>
