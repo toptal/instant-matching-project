@@ -1,3 +1,7 @@
+"use client";
+
+import { usePhase } from "@/context/PhaseContext";
+
 type DotState = "done" | "active" | "pending";
 
 const phases = [
@@ -9,12 +13,8 @@ const phases = [
   "Hire",
 ];
 
-interface Props {
-  activePhase?: number; // 0-indexed
-  label?: string;
-}
-
-export default function IndicatorContainer({ activePhase = 1, label = "Draft Requirements" }: Props) {
+export default function IndicatorContainer() {
+  const { activePhase, phaseLabel } = usePhase();
   return (
     <div className="flex items-center gap-0">
       <div className="flex items-center gap-2">
@@ -41,7 +41,7 @@ export default function IndicatorContainer({ activePhase = 1, label = "Draft Req
           className="ml-1 text-[12px] font-semibold"
           style={{ color: "#455065", fontFamily: "inherit" }}
         >
-          {label}
+          {phaseLabel}
         </span>
       </div>
     </div>

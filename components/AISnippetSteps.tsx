@@ -1,9 +1,17 @@
+"use client";
+
+import { usePhase } from "@/context/PhaseContext";
+
 type StepStatus = "done" | "current" | "pending";
 
-type Step = {
-  label: string;
-  status: StepStatus;
-};
+const STEP_LABELS = [
+  "Intro",
+  "Draft Requirements",
+  "Validate Requirements",
+  "Matching candidates",
+  "Interviewing",
+  "Hire",
+];
 
 function StepIcon({ status }: { status: StepStatus }) {
   if (status === "done") {
@@ -29,16 +37,8 @@ function StepIcon({ status }: { status: StepStatus }) {
   );
 }
 
-const STEPS: Step[] = [
-  { label: "Intro", status: "done" },
-  { label: "Draft Requirements", status: "current" },
-  { label: "Validate Requirements", status: "pending" },
-  { label: "Matching candidates", status: "pending" },
-  { label: "Interviewing", status: "pending" },
-  { label: "Hire", status: "pending" },
-];
-
 export default function AISnippetSteps() {
+  const { activePhase } = usePhase();
   return (
     <div
       className="flex flex-col gap-4 rounded-lg w-full"
@@ -50,20 +50,23 @@ export default function AISnippetSteps() {
     >
       <p className="font-semibold text-[16px] leading-[24px] text-black">Where we are now?</p>
       <div className="flex flex-col gap-2">
-        {STEPS.map((step) => (
-          <div key={step.label} className="flex items-center gap-2">
-            <StepIcon status={step.status} />
-            <span
-              className="text-[14px] leading-[22px]"
-              style={{
-                color: step.status === "current" ? "#000000" : "#455065",
-                fontWeight: step.status === "current" ? 600 : 400,
-              }}
-            >
-              {step.label}
-            </span>
-          </div>
-        ))}
+        {STEP_LABELS.map((label, i) => {
+          const status: StepStatus = i < activePhase ? "done" : i === activePhase ? "current" : "pending";
+          return (
+            <div key={label} className="flex items-center gap-2">
+              <StepIcon status={status} />
+              <span
+                className="text-[14px] leading-[22px]"
+                style={{
+                  color: status === "current" ? "#000000" : "#455065",
+                  fontWeight: status === "current" ? 600 : 400,
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
