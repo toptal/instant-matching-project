@@ -130,7 +130,7 @@ function TypingIndicator() {
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner() {
-  const { setActivePhase, triggerMatcherTooltip } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, markJobDetailsUpdated } = usePhase();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
   const [activeOptions, setActiveOptions] = useState<string[] | null>([
@@ -182,6 +182,7 @@ function WorkspaceInner() {
     if (action === "jd-confirm") {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
+        markJobDetailsUpdated(); // US-027: mark JD as updated for badge
         appendAI("Requirements locked in. Your matched candidates are ready to review.");
       } else {
         appendAI("Of course! What would you like to change about the job description?");

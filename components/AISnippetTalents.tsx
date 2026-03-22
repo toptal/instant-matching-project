@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import CandidateModal from "./CandidateModal";
-import { CANDIDATES, type Decision } from "@/data/candidates";
+import { CANDIDATES } from "@/data/candidates";
+import { usePhase } from "@/context/PhaseContext";
 
 function ArrowRightIcon() {
   return (
@@ -29,14 +30,15 @@ interface Props {
 }
 
 export default function AISnippetTalents({ onPass }: Props) {
-  const [decisions, setDecisions] = useState<Decision[]>([null, null, null]);
+  const { candidateDecisions, setCandidateDecision } = usePhase();
+  const decisions = candidateDecisions;
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
 
-  function handleDecide(index: number, decision: Decision) {
+  function handleDecide(index: number, decision: import("@/data/candidates").Decision) {
     const next = [...decisions];
     next[index] = decision;
-    setDecisions(next);
+    setCandidateDecision(index, decision);
 
     // Fire pass callback on first "not-a-fit" decision
     if (decision === "not-a-fit" && decisions[index] === null) {

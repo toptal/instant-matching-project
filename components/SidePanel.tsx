@@ -15,13 +15,18 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount } = usePhase();
+  const { tooltipTriggerCount, jobDetailsUpdated, markJobDetailsViewed, interestedCount } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     if (tooltipTriggerCount > 0) setShowTooltip(true);
   }, [tooltipTriggerCount]);
+
+  function openJobDetails() {
+    markJobDetailsViewed();
+    setActivePanel("job-details");
+  }
 
   const translateX =
     activePanel === "default"
@@ -88,12 +93,13 @@ export default function SidePanel() {
             <div className="flex flex-col">
               <NavRow
                 label="Job Details"
-                badge="Updated"
-                onClick={() => setActivePanel("job-details")}
+                badge={jobDetailsUpdated ? "Updated" : undefined}
+                onClick={openJobDetails}
               />
               <Separator />
               <NavRow
                 label="Candidates"
+                badge={interestedCount > 0 ? String(interestedCount) : undefined}
                 onClick={() => setActivePanel("candidates")}
               />
               <Separator />
