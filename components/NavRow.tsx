@@ -2,14 +2,17 @@ interface Props {
   label: string;
   disabled?: boolean;
   badge?: string;
+  onClick?: () => void;
 }
 
-export default function NavRow({ label, disabled, badge }: Props) {
+export default function NavRow({ label, disabled, badge, onClick }: Props) {
   const color = disabled ? "#C2C8D0" : "#1a1a2e";
   return (
     <button
-      className="flex items-center justify-between w-full px-5 py-4 text-left cursor-default"
+      className="flex items-center justify-between w-full px-5 py-4 text-left"
+      style={{ cursor: disabled ? "default" : "pointer" }}
       disabled={disabled}
+      onClick={onClick}
     >
       <div className="flex items-center gap-2">
         <span className="text-[14px] font-semibold" style={{ color }}>
