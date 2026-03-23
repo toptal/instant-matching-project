@@ -6,13 +6,11 @@ import { usePhase } from "@/context/PhaseContext";
 import type { Decision } from "@/data/candidates";
 import CandidateModal from "./CandidateModal";
 
-type FilterOption = "all" | "interested" | "not-a-fit" | "not-reviewed";
+type FilterOption = "interested-not-reviewed" | "not-a-fit";
 
 const FILTER_LABELS: Record<FilterOption, string> = {
-  all: "All Candidates",
-  interested: "Interested",
-  "not-a-fit": "Not a Fit",
-  "not-reviewed": "Not Reviewed",
+  "interested-not-reviewed": "Interested or Not Reviewed",
+  "not-a-fit": "Not a fit",
 };
 
 interface Props {
@@ -90,7 +88,7 @@ function FilterDropdown({ value, onChange }: { value: FilterOption; onChange: (v
               key={opt}
               className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
               style={{
-                borderBottom: opt !== "not-reviewed" ? "1px solid #F3F4F6" : "none",
+                borderBottom: opt !== "not-a-fit" ? "1px solid #F3F4F6" : "none",
               }}
               onClick={() => { onChange(opt); setOpen(false); }}
             >
@@ -132,17 +130,13 @@ function DecisionBadge({ decision }: { decision: Decision }) {
 
 export default function CandidatesPanel({ onBack }: Props) {
   const { candidateDecisions, setCandidateDecision, interestedCount, candidatesRevealed, revealedCandidates } = usePhase();
-  const [filter, setFilter] = useState<FilterOption>("interested");
+  const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const filtered = revealedCandidates.filter((c) => {
     const d = candidateDecisions[c.id] ?? null;
-    switch (filter) {
-      case "all":          return true;
-      case "interested":   return d === "interested";
-      case "not-a-fit":    return d === "not-a-fit";
-      case "not-reviewed": return d === null;
-    }
+    if (filter === "interested-not-reviewed") return d === "interested" || d === null;
+    return d === "not-a-fit";
   });
 
   return (
