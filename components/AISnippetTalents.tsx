@@ -126,25 +126,35 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
           <div
             className="relative flex gap-6 rounded-sm"
             style={{
-              border: `1.5px solid ${decision === "interested" ? "#03B080" : "#EBECED"}`,
+              border: "1.5px solid #EBECED",
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
               background: "url('/card-bg.png') center/cover no-repeat",
               padding: 24,
-              transition: "border-color 0.2s ease",
             }}
           >
-            {/* Decision label — top-left of card */}
+            {/* Decision badge — left-edge pill */}
             {decision && (
               <div
-                className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[12px] font-semibold text-white z-10"
-                style={{ background: decision === "interested" ? "#03B080" : "#E53935" }}
+                className="absolute flex items-center px-4 text-[12px] font-semibold leading-[18px] text-white z-10"
+                style={{
+                  top: 10,
+                  left: 0,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  background: decision === "interested" ? "#03B080" : "#E53935",
+                  borderRadius: "0 20px 20px 0",
+                  boxShadow: "0 0 8px rgba(0,0,0,0.08)",
+                }}
               >
                 {decision === "interested" ? "Interested" : "Not a fit"}
               </div>
             )}
 
-            {/* Left */}
-            <div className="flex flex-col gap-3 shrink-0" style={{ width: 150 }}>
+            {/* Left — white box */}
+            <div
+              className="flex flex-col gap-3 shrink-0"
+              style={{ background: "white", padding: 16, width: 182 }}
+            >
               {/* Photo */}
               <div className="rounded-sm overflow-hidden" style={{ width: 150, height: 150, background: "radial-gradient(ellipse at 50% 30%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)" }} />
               <div>
