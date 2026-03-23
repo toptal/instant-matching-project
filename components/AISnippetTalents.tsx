@@ -83,7 +83,9 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
   const interestedIndex = candidates.findIndex((c) => (candidateDecisions[c.id] ?? null) === "interested");
   const displayIndex = interestedIndex !== -1 ? interestedIndex : frontIndex;
 
-  const stackCards = [displayIndex + 2, displayIndex + 1, displayIndex].filter((i) => i < candidates.length);
+  // Ghost card count is fixed to the batch size so the deck never shrinks as
+  // candidates are reviewed. Max 2 ghost cards for visual purposes.
+  const ghostCount = Math.min(candidates.length - 1, 2);
   const c = candidates[displayIndex];
   const decision = c ? (candidateDecisions[c.id] ?? null) : null;
 
@@ -98,14 +100,13 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
   return (
     <>
       <div className="relative w-full">
-        {/* Ghost cards — absolutely positioned, extend 8px per step below the front card */}
-        {stackCards.slice(0, -1).map((idx, pos) => {
-          const ghostCards = stackCards.slice(0, -1);
+        {/* Ghost cards — fixed count matches batch size so deck never shrinks */}
+        {Array.from({ length: ghostCount }, (_, pos) => {
           const step = 8;
-          const stepsBack = ghostCards.length - pos;
+          const stepsBack = ghostCount - pos;
           return (
             <div
-              key={idx}
+              key={pos}
               className="absolute rounded-sm"
               style={{
                 top: 0,
