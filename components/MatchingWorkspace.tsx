@@ -3,29 +3,35 @@
 import { useState, useRef, useEffect } from "react";
 import ToptalLogo from "./ToptalLogo";
 import IndicatorContainer from "./IndicatorContainer";
-import VideoSnippet from "./VideoSnippet";
 import ChatInput from "./ChatInput";
 import SidePanel from "./SidePanel";
 import AISnippetSteps from "./AISnippetSteps";
 import AISnippetRequirements from "./AISnippetRequirements";
 import AISnippetTalents from "./AISnippetTalents";
 import { PhaseProvider, usePhase } from "@/context/PhaseContext";
+import { SCENARIO } from "@/data/scenario";
+import type { SnippetItem } from "@/data/scenario";
 
-const TOOLTIP_KEYWORDS = ["requirements", "matcher", "help", "adjust", "refine", "struggling", "not sure", "unsure", "change"];
-
-type ConversationStage = "intro" | "await-jd" | "await-q1" | "await-q2" | "candidates" | "open";
+const TOOLTIP_KEYWORDS = [
+  "requirements",
+  "matcher",
+  "help",
+  "adjust",
+  "refine",
+  "struggling",
+  "not sure",
+  "unsure",
+  "change",
+];
 
 type Message =
   | { id: string; type: "ai-heading"; content: string }
   | { id: string; type: "ai-text"; content: React.ReactNode }
   | { id: string; type: "user-text"; content: string }
-  | { id: string; type: "snippet-video" }
   | { id: string; type: "snippet-steps" }
   | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
   | { id: string; type: "snippet-talents" }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
-
-const INITIAL_MESSAGES: Message[] = [];
 
 // Character-by-character typewriter for dynamically-appended AI messages
 function TypewriterText({
@@ -52,23 +58,38 @@ function TypewriterText({
     return () => clearTimeout(t);
   }, [count, text, threadRef]);
 
+  const visible = text.slice(0, count);
+  const paras = visible.split("\n\n");
+  const cursor = count < text.length ? (
+    <span
+      style={{
+        display: "inline-block",
+        width: 2,
+        height: "0.85em",
+        background: "#9EA8B3",
+        marginLeft: 1,
+        verticalAlign: "text-bottom",
+        animation: "cursor-blink 0.6s steps(1) infinite",
+      }}
+    />
+  ) : null;
+
+  if (paras.length === 1) {
+    return (
+      <p className={className} style={style}>
+        {visible}{cursor}
+      </p>
+    );
+  }
+
   return (
-    <p className={className} style={style}>
-      {text.slice(0, count)}
-      {count < text.length && (
-        <span
-          style={{
-            display: "inline-block",
-            width: 2,
-            height: "0.85em",
-            background: "#9EA8B3",
-            marginLeft: 1,
-            verticalAlign: "text-bottom",
-            animation: "cursor-blink 0.6s steps(1) infinite",
-          }}
-        />
-      )}
-    </p>
+    <div className="flex flex-col gap-3">
+      {paras.map((para, i) => (
+        <p key={i} className={className} style={style}>
+          {para}{i === paras.length - 1 ? cursor : null}
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -101,18 +122,16 @@ function uid() {
 // Inner component so it can access PhaseContext
 function WorkspaceInner() {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeOptions, setActiveOptions] = useState<string[] | null>(null);
-  const [pinnedInteraction, setPinnedInteraction] = useState<{ options: string[]; action: string } | null>(null);
-  const [conversationStage, setConversationStage] = useState<ConversationStage>("intro");
-  const [videoWatched, setVideoWatched] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const passCountRef = useRef(0);
-  const jdVersion = useRef(0);
   // IDs of AI messages that should animate (dynamically appended)
   const animatedIds = useRef(new Set<string>());
+  // Current position in the scenario script
+  const currentStepRef = useRef(-1);
 
   useEffect(() => {
     if (threadRef.current) {
@@ -121,9 +140,7 @@ function WorkspaceInner() {
   }, [messages]);
 
   function schedule(fn: () => void, delay: number) {
-    const t = setTimeout(() => {
-      fn();
-    }, delay);
+    const t = setTimeout(fn, delay);
     pendingTimeouts.current.push(t);
   }
 
@@ -133,21 +150,6 @@ function WorkspaceInner() {
     setIsLoading(false);
   }
 
-  function scheduleSequence(steps: Array<{ delay: number; fn: () => void }>) {
-    let accumulated = 0;
-    steps.forEach(({ delay, fn }) => {
-      accumulated += delay;
-      schedule(fn, accumulated);
-    });
-  }
-
-  // Append an animated AI heading string (typewriter effect)
-  function appendAnimatedHeading(text: string) {
-    const id = uid();
-    animatedIds.current.add(id);
-    setMessages((prev) => [...prev, { id, type: "ai-heading", content: text }]);
-  }
-
   // Append an animated AI text string (typewriter effect)
   function appendAIText(text: string) {
     const id = uid();
@@ -155,313 +157,136 @@ function WorkspaceInner() {
     setMessages((prev) => [...prev, { id, type: "ai-text", content: text }]);
   }
 
-  function appendAI(content: React.ReactNode, delay = 700) {
-    schedule(() => {
-      if (typeof content === "string") {
-        appendAIText(content);
-      } else {
-        setMessages((prev) => [...prev, { id: uid(), type: "ai-text", content }]);
-      }
-      setIsLoading(false);
-    }, delay);
+  // Append a bold heading
+  function appendAIHeading(text: string) {
+    const id = uid();
+    animatedIds.current.add(id);
+    setMessages((prev) => [...prev, { id, type: "ai-heading", content: text }]);
   }
 
-  // Intro sequence — runs once on mount, stops after video snippet
+  // Map RequirementSnippet state → variant + version label
+  function requirementVariant(state: string): { variant: "initial" | "refined"; versionLabel: string } {
+    switch (state) {
+      case "draft":         return { variant: "initial",  versionLabel: "v1.0" };
+      case "draft-updated": return { variant: "refined",  versionLabel: "v1.1" };
+      case "validation":    return { variant: "initial",  versionLabel: "v1.1" };
+      case "validated":     return { variant: "refined",  versionLabel: "v1.2" };
+      case "updated":       return { variant: "refined",  versionLabel: "v1.3" };
+      default:              return { variant: "initial",  versionLabel: "v1.0" };
+    }
+  }
+
+  // Inject a snippet into the thread + drive side-effects (phase, job details, candidates)
+  function addSnippetToThread(snippet: SnippetItem) {
+    switch (snippet.type) {
+      case "StepsSnippet":
+        setMessages((prev) => [...prev, { id: uid(), type: "snippet-steps" }]);
+        setActivePhase(snippet.activeStage - 1);
+        break;
+
+      case "RequirementSnippet": {
+        const { variant, versionLabel } = requirementVariant(snippet.state);
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), type: "snippet-requirements", variant, versionLabel },
+        ]);
+        updateJobDetails(variant, versionLabel);
+        break;
+      }
+
+      case "TalentsSnippet":
+        setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
+        if (snippet.source === "auto-matched") revealCandidates();
+        break;
+    }
+  }
+
+  // Play a scenario step: schedule all messages, snippets, and response chips
+  function playScenarioStep(stepIndex: number) {
+    if (stepIndex >= SCENARIO.length) return;
+    const step = SCENARIO[stepIndex];
+    currentStepRef.current = stepIndex;
+
+    setActiveOptions(null);
+
+    // Keep loading on while the step plays out; it turns off only after the last item
+    let delay = 0;
+    let lastResponseOptions: string[] | null = null;
+    let hasContent = false;
+
+    for (const item of step.items) {
+      if (item.kind === "message") {
+        hasContent = true;
+        delay += 900;
+        const d = delay;
+        const isHeading = item.style === "heading";
+        schedule(() => (isHeading ? appendAIHeading(item.text) : appendAIText(item.text)), d);
+      } else if (item.kind === "snippet") {
+        hasContent = true;
+        delay += 200;
+        const d = delay;
+        const s = item.snippet;
+        schedule(() => addSnippetToThread(s), d);
+      } else if (item.kind === "responses") {
+        lastResponseOptions = item.options;
+      }
+    }
+
+    if (hasContent) setIsLoading(true);
+
+    // After all items: stop loading and reveal response chips
+    const opts = lastResponseOptions;
+    schedule(() => {
+      setIsLoading(false);
+      if (opts) setActiveOptions(opts);
+    }, delay + 400);
+  }
+
+  // Advance to the next scenario step, optionally posting a user message first
+  function advanceScenario(userText?: string) {
+    cancelAll();
+
+    if (userText) {
+      setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
+      const lower = userText.toLowerCase();
+      if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) triggerMatcherTooltip();
+    }
+
+    playScenarioStep(currentStepRef.current + 1);
+  }
+
+  // Start the scenario on mount
   useEffect(() => {
-    scheduleSequence([
-      // "Welcome to your Matching Workspace." — 36 chars
-      { delay: 400, fn: () => appendAnimatedHeading("Welcome to your Matching Workspace.") },
-      // 36 * 15ms + 500 buffer
-      { delay: 1040, fn: () => appendAIText("In this short video we are explaining your next steps and the purpose of this workspace. Please watch the video to continue.") },
-      // 124 * 15ms + 800 buffer
-      { delay: 2660, fn: () => setMessages((prev) => [...prev, { id: uid(), type: "snippet-video" }]) },
-    ]);
+    playScenarioStep(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Post-video sequence — runs once the user finishes watching
-  useEffect(() => {
-    if (!videoWatched) return;
-    scheduleSequence([
-      { delay: 600, fn: () => appendAIText("Thank you for watching the video.") },
-      // 33 * 15ms + 400 buffer
-      { delay: 895, fn: () => appendAIText("Here's what's coming next.") },
-      // 26 * 15ms + 400 buffer
-      { delay: 790, fn: () => setMessages((prev) => [...prev, { id: uid(), type: "snippet-steps" }]) },
-      { delay: 700, fn: () => appendAIText("Can we jump to your requirements?") },
-      // 32 * 15ms + 500 buffer — reveal mode-selection pills
-      { delay: 980, fn: () => setActiveOptions(["Yes, let's use the voice mode", "Yes, let's chat"]) },
-    ]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoWatched]);
-
-  // Pinned bottom pills (mode selection)
-  function handleOptionSelect(option: string) {
-    setMessages((prev) => [
-      ...prev,
-      { id: uid(), type: "user-text", content: option },
-    ]);
-    setActiveOptions(null);
-    setActivePhase(2); // advance: Intro → Validate Requirements
+  // Callback from AISnippetTalents when user passes on a candidate
+  function handlePass(candidateName: string) {
+    passCountRef.current += 1;
     setIsLoading(true);
-    setConversationStage("await-jd");
     schedule(() => {
-      appendAIText("Great! Describe the role you're looking to fill, or paste a job description. I'll structure it for you.");
+      if (passCountRef.current >= 2) {
+        appendAIText(
+          `Thanks for the feedback on ${candidateName}. I can see a pattern — let me factor that into the next set of results.`
+        );
+      } else {
+        appendAIText(
+          `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`
+        );
+      }
       setIsLoading(false);
     }, 700);
   }
 
-  // Handle a pinned (above-input) interaction option
-  function handlePinnedInteraction(option: string, action: string) {
-    setPinnedInteraction(null);
-    setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: option }]);
-    setIsLoading(true);
-    runInteractionAction(option, action);
-  }
-
-  // Shared action logic (used by both pinned and legacy thread options)
-  function runInteractionAction(option: string, action: string) {
-    if (action === "jd-confirm") {
-      if (option === "Yes, looks good") {
-        setActivePhase(3); // advance to Matching Candidates
-
-        const bulletsContent = (
-          <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-            <p className="mb-1">Please review the three automatically matched candidates:</p>
-            <ul className="list-disc pl-5 flex flex-col gap-0.5">
-              <li>Mark each profile as Interested or Not a fit</li>
-              <li>You may already find the right match here</li>
-              <li>If not, your feedback helps us improve future recommendations or involve a matcher for a more curated selection</li>
-            </ul>
-          </div>
-        );
-
-        scheduleSequence([
-          {
-            delay: 800,
-            fn: () => {
-              appendAIText("Requirements locked in. Let me pull up your matched candidates.");
-            },
-          },
-          {
-            delay: 400,
-            fn: () => {
-              setMessages((prev) => [
-                ...prev,
-                { id: uid(), type: "ai-text", content: bulletsContent },
-              ]);
-            },
-          },
-          {
-            delay: 300,
-            fn: () => {
-              setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
-              revealCandidates();
-              setIsLoading(false);
-              setConversationStage("candidates");
-            },
-          },
-        ]);
-      } else {
-        // "I'd like to adjust this"
-        setConversationStage("await-jd");
-        schedule(() => {
-          appendAIText("Of course! What would you like to change about the job description?");
-          setIsLoading(false);
-        }, 700);
-      }
-    } else if (action === "refine-confirm") {
-      if (option === "Yes, let's refine") {
-        setConversationStage("await-jd");
-        schedule(() => {
-          appendAIText("What would you like to change? Describe the adjustment and I'll update the requirements.");
-          setIsLoading(false);
-        }, 700);
-      } else {
-        // "No, these are fine"
-        schedule(() => {
-          appendAIText("No problem. You can continue reviewing the current candidates or reach out if you need adjustments later.");
-          setIsLoading(false);
-        }, 700);
-      }
-    }
-  }
-
-  function handlePass(candidateName: string) {
-    passCountRef.current += 1;
-    setIsLoading(true);
-
-    if (passCountRef.current >= 2) {
-      scheduleSequence([
-        {
-          delay: 700,
-          fn: () => {
-            appendAIText(`Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.`);
-          },
-        },
-        {
-          delay: 600,
-          fn: () => {
-            setPinnedInteraction({ options: ["Yes, let's refine", "No, these are fine"], action: "refine-confirm" });
-            setIsLoading(false);
-          },
-        },
-      ]);
-    } else {
-      schedule(() => {
-        appendAIText(`Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`);
-        setIsLoading(false);
-      }, 700);
-    }
-  }
-
-  function handleJDInput(text: string) {
-    if (jdVersion.current === 0) {
-      const label = "v1.0";
-      // Full Q&A flow
-      scheduleSequence([
-        {
-          delay: 1400,
-          fn: () => {
-            appendAIText("Got it. Here's an initial draft based on what you've shared:");
-          },
-        },
-        {
-          delay: 100,
-          fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "initial", versionLabel: label },
-            ]);
-            updateJobDetails("initial", label);
-          },
-        },
-        {
-          delay: 900,
-          fn: () => {
-            appendAIText("A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?");
-            setIsLoading(false);
-            setConversationStage("await-q1");
-          },
-        },
-      ]);
-    } else {
-      const nextVersion = jdVersion.current + 1;
-      const label = `v1.${nextVersion}`;
-      jdVersion.current = nextVersion;
-      // Skip Q&A — show updated JD + confirmation
-      scheduleSequence([
-        {
-          delay: 1000,
-          fn: () => {
-            appendAIText("Got it. Here's the updated job description:");
-          },
-        },
-        {
-          delay: 100,
-          fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "refined", versionLabel: label },
-            ]);
-            updateJobDetails("refined", label);
-          },
-        },
-        {
-          delay: 700,
-          fn: () => {
-            appendAIText("Does this look right? Let me know if you'd like to adjust anything.");
-          },
-        },
-        {
-          delay: 300,
-          fn: () => {
-            setPinnedInteraction({ options: ["Yes, looks good", "I'd like to adjust this"], action: "jd-confirm" });
-            setIsLoading(false);
-            setConversationStage("open");
-          },
-        },
-      ]);
-    }
-  }
-
-  function handleQ1Answer(_text: string) {
-    scheduleSequence([
-      {
-        delay: 900,
-        fn: () => {
-          appendAIText("Good to know. One more — do you have any timezone preferences for collaboration?");
-          setIsLoading(false);
-          setConversationStage("await-q2");
-        },
-      },
-    ]);
-  }
-
-  function handleQ2Answer(_text: string) {
-    jdVersion.current = 1;
-    const label = "v1.1";
-    scheduleSequence([
-      {
-        delay: 1000,
-        fn: () => {
-          appendAIText("Perfect. I've refined the job description with your answers:");
-        },
-      },
-      {
-        delay: 100,
-        fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            { id: uid(), type: "snippet-requirements", variant: "refined", versionLabel: label },
-          ]);
-          updateJobDetails("refined", label);
-        },
-      },
-      {
-        delay: 700,
-        fn: () => {
-          appendAIText("Does this look right? Let me know if you'd like to adjust anything.");
-        },
-      },
-      {
-        delay: 300,
-        fn: () => {
-          setPinnedInteraction({ options: ["Yes, looks good", "I'd like to adjust this"], action: "jd-confirm" });
-          setIsLoading(false);
-          setConversationStage("open");
-        },
-      },
-    ]);
-  }
-
+  // User sends a free-form message → advance scenario
   function handleSend(text: string) {
-    setMessages((prev) => [
-      ...prev,
-      { id: uid(), type: "user-text", content: text },
-    ]);
-    setIsLoading(true);
+    advanceScenario(text);
+  }
 
-    // Keyword detection for matcher tooltip (US-029)
-    const lower = text.toLowerCase();
-    if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
-      triggerMatcherTooltip();
-    }
-
-    switch (conversationStage) {
-      case "await-jd":
-        handleJDInput(text);
-        break;
-      case "await-q1":
-        handleQ1Answer(text);
-        break;
-      case "await-q2":
-        handleQ2Answer(text);
-        break;
-      default:
-        appendAI("Got it — I'll take note of that.");
-        break;
-    }
+  // User clicks a quick-reply chip → post it as user message and advance scenario
+  function handleOptionSelect(option: string) {
+    advanceScenario(option);
   }
 
   function renderMessage(msg: Message) {
@@ -489,13 +314,19 @@ function WorkspaceInner() {
         if (animate) {
           return <TypewriterText text={msg.content as string} threadRef={threadRef} />;
         }
-        return typeof msg.content === "string" ? (
-          <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-            {msg.content}
-          </p>
-        ) : (
-          <>{msg.content}</>
-        );
+        if (typeof msg.content === "string") {
+          const paras = msg.content.split("\n\n");
+          return (
+            <div className="flex flex-col gap-3">
+              {paras.map((para, i) => (
+                <p key={i} className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+                  {para}
+                </p>
+              ))}
+            </div>
+          );
+        }
+        return <>{msg.content}</>;
       }
       case "user-text":
         return (
@@ -514,7 +345,7 @@ function WorkspaceInner() {
             {msg.options.map((opt) => (
               <button
                 key={opt}
-                onClick={() => handlePinnedInteraction(opt, msg.action)}
+                onClick={() => handleOptionSelect(opt)}
                 className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
                 style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
               >
@@ -523,8 +354,6 @@ function WorkspaceInner() {
             ))}
           </div>
         );
-      case "snippet-video":
-        return <VideoSnippet onWatched={() => setVideoWatched(true)} />;
       case "snippet-steps":
         return <AISnippetSteps />;
       case "snippet-requirements":
@@ -586,36 +415,25 @@ function WorkspaceInner() {
               </div>
             </div>
 
-            {/* Pinned bottom area: action buttons + input */}
+            {/* Pinned bottom area: quick-reply chips + input */}
             <div
               className="shrink-0 pt-3 flex flex-col gap-2"
               style={{
                 background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 24%)",
               }}
             >
-              {(activeOptions || pinnedInteraction) && (
+              {activeOptions && (
                 <div className="flex gap-2 flex-wrap">
-                  {activeOptions
-                    ? activeOptions.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => handleOptionSelect(opt)}
-                          className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
-                          style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
-                        >
-                          {opt}
-                        </button>
-                      ))
-                    : pinnedInteraction!.options.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => handlePinnedInteraction(opt, pinnedInteraction!.action)}
-                          className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
-                          style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                  {activeOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => handleOptionSelect(opt)}
+                      className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
+                      style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
                 </div>
               )}
               <ChatInput onSend={handleSend} isLoading={isLoading} onStop={cancelAll} />
