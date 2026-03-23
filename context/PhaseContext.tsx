@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-import type { Decision } from "@/data/candidates";
+import { createContext, useContext, useRef, useState } from "react";
+import type { Candidate, Decision } from "@/data/candidates";
 import { CANDIDATES } from "@/data/candidates";
 
 const PHASE_LABELS = [
@@ -29,16 +29,17 @@ interface PhaseContextValue {
   markJobDetailsViewed: () => void;
   // Candidates — hidden until revealed in thread
   candidatesRevealed: boolean;
-  revealedCount: number;
   candidatesNew: boolean;
-  revealCandidates: () => void;
   markCandidatesViewed: () => void;
-  // US-027 + US-039: shared candidate decisions
-  candidateDecisions: Decision[];
-  setCandidateDecision: (index: number, decision: Decision) => void;
+  // Candidate pool — grows as batches are revealed in the thread
+  revealedCandidates: Candidate[];
+  revealNextBatch: (count: number) => Candidate[];
+  // Decisions keyed by candidate id
+  candidateDecisions: Record<string, Decision>;
+  setCandidateDecision: (id: string, decision: Decision) => void;
   interestedCount: number;
-  // US-039: status history per candidate
-  statusHistory: StatusHistoryEntry[][];
+  // Status history per candidate id
+  statusHistory: Record<string, StatusHistoryEntry[]>;
 }
 
 const PhaseContext = createContext<PhaseContextValue>({
@@ -53,14 +54,14 @@ const PhaseContext = createContext<PhaseContextValue>({
   updateJobDetails: () => {},
   markJobDetailsViewed: () => {},
   candidatesRevealed: false,
-  revealedCount: 0,
   candidatesNew: false,
-  revealCandidates: () => {},
   markCandidatesViewed: () => {},
-  candidateDecisions: [null, null, null],
+  revealedCandidates: [],
+  revealNextBatch: () => [],
+  candidateDecisions: {},
   setCandidateDecision: () => {},
   interestedCount: 0,
-  statusHistory: [[], [], []],
+  statusHistory: {},
 });
 
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
@@ -70,10 +71,13 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jobDetailsUpdated, setJobDetailsUpdated] = useState(false);
   const [candidatesRevealed, setCandidatesRevealed] = useState(false);
-  const [revealedCount, setRevealedCount] = useState(0);
   const [candidatesNew, setCandidatesNew] = useState(false);
-  const [candidateDecisions, setCandidateDecisions] = useState<Decision[]>([null, null, null]);
-  const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[][]>([[], [], []]);
+  const [revealedCandidates, setRevealedCandidates] = useState<Candidate[]>([]);
+  const [candidateDecisions, setCandidateDecisions] = useState<Record<string, Decision>>({});
+  const [statusHistory, setStatusHistory] = useState<Record<string, StatusHistoryEntry[]>>({});
+
+  // Mutable pointer — not state — so revealNextBatch reads current value synchronously.
+  const nextCandidateIndex = useRef(0);
 
   function triggerMatcherTooltip() {
     setTooltipTriggerCount((n) => n + 1);
@@ -89,30 +93,33 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
     setJobDetailsUpdated(false);
   }
 
-  function revealCandidates() {
-    setCandidatesRevealed(true);
-    setRevealedCount(CANDIDATES.length);
-    setCandidatesNew(true);
+  /** Pull the next `count` candidates from the global pool, add them to the
+   *  revealed list, and return them so the caller can embed them in a snippet. */
+  function revealNextBatch(count: number): Candidate[] {
+    const start = nextCandidateIndex.current;
+    const batch = CANDIDATES.slice(start, start + count);
+    nextCandidateIndex.current += count;
+    if (batch.length > 0) {
+      setRevealedCandidates((prev) => [...prev, ...batch]);
+      setCandidatesRevealed(true);
+      setCandidatesNew(true);
+    }
+    return batch;
   }
 
   function markCandidatesViewed() {
     setCandidatesNew(false);
   }
 
-  function setCandidateDecision(index: number, decision: Decision) {
-    setCandidateDecisions((prev) => {
-      const next = [...prev];
-      next[index] = decision;
-      return next;
-    });
-    setStatusHistory((prev) => {
-      const next = prev.map((h) => [...h]);
-      next[index] = [...next[index], { decision, timestamp: new Date() }];
-      return next;
-    });
+  function setCandidateDecision(id: string, decision: Decision) {
+    setCandidateDecisions((prev) => ({ ...prev, [id]: decision }));
+    setStatusHistory((prev) => ({
+      ...prev,
+      [id]: [...(prev[id] ?? []), { decision, timestamp: new Date() }],
+    }));
   }
 
-  const interestedCount = candidateDecisions.filter((d) => d === "interested").length;
+  const interestedCount = Object.values(candidateDecisions).filter((d) => d === "interested").length;
 
   return (
     <PhaseContext.Provider
@@ -128,10 +135,10 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         updateJobDetails,
         markJobDetailsViewed,
         candidatesRevealed,
-        revealedCount,
         candidatesNew,
-        revealCandidates,
         markCandidatesViewed,
+        revealedCandidates,
+        revealNextBatch,
         candidateDecisions,
         setCandidateDecision,
         interestedCount,

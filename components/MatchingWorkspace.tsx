@@ -10,6 +10,7 @@ import AISnippetRequirements from "./AISnippetRequirements";
 import AISnippetTalents from "./AISnippetTalents";
 import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 import type { SnippetItem } from "@/data/scenario";
+import type { Candidate } from "@/data/candidates";
 import { getActiveScenario } from "@/utils/scenarioStorage";
 
 const TOOLTIP_KEYWORDS = [
@@ -30,7 +31,7 @@ type Message =
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-steps" }
   | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
-  | { id: string; type: "snippet-talents" }
+  | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
 
 // Character-by-character typewriter for dynamically-appended AI messages
@@ -127,7 +128,7 @@ const SNIPPET_THINK_MS = 1400;
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
@@ -218,10 +219,23 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         break;
       }
 
-      case "TalentsSnippet":
-        setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
-        if (snippet.source === "auto-matched") revealCandidates();
+      case "TalentsSnippet": {
+        if (snippet.view_mode) {
+          // Shortlist / interviewed view — show already-revealed candidates, filtered in component.
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), type: "snippet-talents", candidates: [], viewMode: snippet.view_mode },
+          ]);
+        } else {
+          // New batch — pull next 3 candidates from the pool.
+          const batch = revealNextBatch(3);
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), type: "snippet-talents", candidates: batch },
+          ]);
+        }
         break;
+      }
     }
   }
 
@@ -399,7 +413,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents":
-        return <AISnippetTalents onPass={handlePass} />;
+        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} />;
     }
   }
 

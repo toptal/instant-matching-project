@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import CandidateModal from "./CandidateModal";
-import { CANDIDATES } from "@/data/candidates";
+import type { Candidate } from "@/data/candidates";
 import { usePhase } from "@/context/PhaseContext";
 
 function ArrowRightIcon() {
@@ -26,32 +26,50 @@ function SkillPill({ label }: { label: string }) {
 }
 
 interface Props {
+  /** The specific batch of candidates to display. Empty when viewMode is set. */
+  candidates: Candidate[];
+  /** When set, derives candidates from the revealed pool instead of the prop. */
+  viewMode?: string;
   onPass?: (candidateName: string) => void;
 }
 
-export default function AISnippetTalents({ onPass }: Props) {
-  const { candidateDecisions, setCandidateDecision } = usePhase();
-  const decisions = candidateDecisions;
+export default function AISnippetTalents({ candidates: candidatesProp, viewMode, onPass }: Props) {
+  const { candidateDecisions, setCandidateDecision, revealedCandidates } = usePhase();
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
 
-  function handleDecide(index: number, decision: import("@/data/candidates").Decision) {
-    const next = [...decisions];
-    next[index] = decision;
-    setCandidateDecision(index, decision);
+  // For view_mode snippets (shortlist / interviewed), show the revealed pool filtered
+  // to interested candidates; fall back to the full revealed list if none decided yet.
+  const candidates: Candidate[] = (() => {
+    if (!viewMode) return candidatesProp;
+    const interested = revealedCandidates.filter((c) => candidateDecisions[c.id] === "interested");
+    return interested.length > 0 ? interested : revealedCandidates;
+  })();
+
+  // Derive a positional Decision[] for the current batch so CandidateModal's
+  // simple index-based API keeps working unchanged.
+  const batchDecisions = candidates.map((c) => candidateDecisions[c.id] ?? null);
+
+  function handleDecide(localIndex: number, decision: import("@/data/candidates").Decision) {
+    const c = candidates[localIndex];
+    if (!c) return;
+    const prevDecision = candidateDecisions[c.id] ?? null;
+    setCandidateDecision(c.id, decision);
 
     // Fire pass callback on first "not-a-fit" decision
-    if (decision === "not-a-fit" && decisions[index] === null) {
-      onPass?.(CANDIDATES[index].name);
+    if (decision === "not-a-fit" && prevDecision === null) {
+      onPass?.(c.name);
     }
 
     // Advance front card if we just decided the current front
-    if (index === frontIndex && frontIndex < CANDIDATES.length - 1) {
+    if (localIndex === frontIndex && frontIndex < candidates.length - 1) {
       setTimeout(() => setFrontIndex((f) => f + 1), 250);
     }
 
-    // Auto-advance modal to next undecided candidate, or close on last
-    const nextUndecided = CANDIDATES.findIndex((_, i) => i !== index && next[i] === null);
+    // Auto-advance modal to next undecided candidate in this batch, or close
+    const nextUndecided = candidates.findIndex(
+      (_, i) => i !== localIndex && (candidateDecisions[candidates[i].id] ?? null) === null
+    );
     if (nextUndecided !== -1) {
       setModalIndex(nextUndecided);
     } else {
@@ -59,15 +77,23 @@ export default function AISnippetTalents({ onPass }: Props) {
     }
   }
 
-  const allDecided = decisions.every((d) => d !== null);
+  const allDecided = candidates.length > 0 && candidates.every((c) => (candidateDecisions[c.id] ?? null) !== null);
 
   // Keep an "Interested" candidate upfront if any; otherwise use frontIndex
-  const interestedIndex = decisions.findIndex((d) => d === "interested");
+  const interestedIndex = candidates.findIndex((c) => (candidateDecisions[c.id] ?? null) === "interested");
   const displayIndex = interestedIndex !== -1 ? interestedIndex : frontIndex;
 
-  const stackCards = [displayIndex + 2, displayIndex + 1, displayIndex].filter((i) => i < CANDIDATES.length);
-  const c = CANDIDATES[displayIndex];
-  const decision = decisions[displayIndex];
+  const stackCards = [displayIndex + 2, displayIndex + 1, displayIndex].filter((i) => i < candidates.length);
+  const c = candidates[displayIndex];
+  const decision = c ? (candidateDecisions[c.id] ?? null) : null;
+
+  if (candidates.length === 0) {
+    return (
+      <p className="text-[13px] text-center w-full py-4" style={{ color: "#455065" }}>
+        No candidates to show yet.
+      </p>
+    );
+  }
 
   return (
     <>
@@ -96,7 +122,7 @@ export default function AISnippetTalents({ onPass }: Props) {
         })}
 
         {/* Front card */}
-        {frontIndex < CANDIDATES.length && (
+        {frontIndex < candidates.length && c && (
           <div
             className="relative flex gap-6 rounded-sm"
             style={{
@@ -193,9 +219,9 @@ export default function AISnippetTalents({ onPass }: Props) {
       {/* Modal */}
       {modalIndex !== null && (
         <CandidateModal
-          candidates={CANDIDATES}
+          candidates={candidates}
           currentIndex={modalIndex}
-          decisions={decisions}
+          decisions={batchDecisions}
           onClose={() => setModalIndex(null)}
           onDecide={handleDecide}
           onNavigate={setModalIndex}
