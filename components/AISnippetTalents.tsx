@@ -88,7 +88,7 @@ export default function AISnippetTalents({ onPass }: Props) {
                 bottom: -stepsBack * step,
                 border: "1px solid #EBECED",
                 boxShadow: "0 0 8px rgba(0,0,0,0.08)",
-                background: "white",
+                background: "white url('/card-bg.png') center/cover no-repeat",
                 transition: "all 0.3s ease",
               }}
             />
@@ -102,7 +102,7 @@ export default function AISnippetTalents({ onPass }: Props) {
             style={{
               border: `1.5px solid ${decision === "interested" ? "#03B080" : "#EBECED"}`,
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
-              background: "white",
+              background: "url('/card-bg.png') center/cover no-repeat",
               padding: 24,
               transition: "border-color 0.2s ease",
             }}
