@@ -50,39 +50,54 @@ export default function ChatInput({ onSend, isLoading = false, onStop }: ChatInp
           </button>
         ) : (
           <button
-            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold text-white"
-            style={{ background: "#204ECF" }}
+            className="flex items-center gap-2 rounded-full pr-3"
+            style={{ background: "#edf1fd" }}
           >
-            {/* Waveform icon */}
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="5" width="2" height="6" rx="1" fill="white" />
-              <rect x="4" y="3" width="2" height="10" rx="1" fill="white" />
-              <rect x="7" y="1" width="2" height="14" rx="1" fill="white" />
-              <rect x="10" y="3" width="2" height="10" rx="1" fill="white" />
-              <rect x="13" y="5" width="2" height="6" rx="1" fill="white" />
-            </svg>
-            Use voice mode
+            {/* Icon circle */}
+            <div
+              className="rounded-full p-2 flex items-center justify-center"
+              style={{ background: "#204ecf" }}
+            >
+              {/* Waveform bars */}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="0" y="6" width="1" height="2" rx="0.5" fill="white" />
+                <rect x="2.5" y="3" width="1" height="8" rx="0.5" fill="white" />
+                <rect x="5" y="1" width="1" height="12" rx="0.5" fill="white" />
+                <rect x="7.5" y="5" width="1" height="4" rx="0.5" fill="white" />
+                <rect x="10" y="3" width="1" height="8" rx="0.5" fill="white" />
+                <rect x="12.5" y="6" width="1" height="2" rx="0.5" fill="white" />
+              </svg>
+            </div>
+            {/* Label */}
+            <span
+              className="text-[13px] font-semibold whitespace-nowrap"
+              style={{ color: "#204ecf" }}
+            >
+              Use voice mode
+            </span>
+            {/* Keyboard shortcut badges */}
+            <div className="flex items-center gap-1">
+              <span
+                className="px-1 rounded text-[12px] leading-5"
+                style={{ background: "#d5defa", color: "#204ecf", fontFamily: "SF Compact Display, SF Pro Display, system-ui" }}
+              >
+                ⌘
+              </span>
+              <span
+                className="px-1 rounded text-[12px] leading-5"
+                style={{ background: "#d5defa", color: "#204ecf", fontFamily: "SF Compact Display, SF Pro Display, system-ui" }}
+              >
+                ⇧
+              </span>
+              <span
+                className="px-1 rounded text-[12px] leading-5"
+                style={{ background: "#d5defa", color: "#204ecf", fontFamily: "SF Compact Display, SF Pro Display, system-ui" }}
+              >
+                /
+              </span>
+            </div>
           </button>
         )}
-        {/* Keyboard shortcut hints */}
-        <span
-          className="text-[11px] px-1.5 py-0.5 rounded"
-          style={{ background: "#F0F2F5", color: "#9EA8B3", fontFamily: "monospace" }}
-        >
-          ⌘⏎
-        </span>
-        <span
-          className="text-[11px] px-1.5 py-0.5 rounded"
-          style={{ background: "#F0F2F5", color: "#9EA8B3" }}
-        >
-          ◎
-        </span>
-        <span
-          className="text-[11px] px-1.5 py-0.5 rounded"
-          style={{ background: "#F0F2F5", color: "#9EA8B3" }}
-        >
-          /
-        </span>
       </div>
     </div>
   );
