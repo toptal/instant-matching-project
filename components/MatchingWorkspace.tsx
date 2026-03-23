@@ -56,6 +56,47 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
+// Character-by-character typewriter for dynamically-appended AI messages
+function TypewriterText({
+  text,
+  threadRef,
+}: {
+  text: string;
+  threadRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (count >= text.length) return;
+    const t = setTimeout(() => {
+      setCount((c) => c + 1);
+      if (threadRef.current) {
+        threadRef.current.scrollTop = threadRef.current.scrollHeight;
+      }
+    }, 15);
+    return () => clearTimeout(t);
+  }, [count, text, threadRef]);
+
+  return (
+    <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+      {text.slice(0, count)}
+      {count < text.length && (
+        <span
+          style={{
+            display: "inline-block",
+            width: 2,
+            height: "0.85em",
+            background: "#9EA8B3",
+            marginLeft: 1,
+            verticalAlign: "text-bottom",
+            animation: "cursor-blink 0.6s steps(1) infinite",
+          }}
+        />
+      )}
+    </p>
+  );
+}
+
 function TypingIndicator() {
   return (
     <div className="flex gap-1 items-center" style={{ padding: "4px 0" }}>
@@ -97,6 +138,8 @@ function WorkspaceInner() {
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const passCountRef = useRef(0);
   const jdVersion = useRef(0);
+  // IDs of AI messages that should animate (dynamically appended, not initial)
+  const animatedIds = useRef(new Set<string>());
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -129,9 +172,20 @@ function WorkspaceInner() {
     });
   }
 
+  // Append an animated AI text string (typewriter effect)
+  function appendAIText(text: string) {
+    const id = uid();
+    animatedIds.current.add(id);
+    setMessages((prev) => [...prev, { id, type: "ai-text", content: text }]);
+  }
+
   function appendAI(content: React.ReactNode, delay = 700) {
     schedule(() => {
-      setMessages((prev) => [...prev, { id: uid(), type: "ai-text", content }]);
+      if (typeof content === "string") {
+        appendAIText(content);
+      } else {
+        setMessages((prev) => [...prev, { id: uid(), type: "ai-text", content }]);
+      }
       setIsLoading(false);
     }, delay);
   }
@@ -147,14 +201,7 @@ function WorkspaceInner() {
     setIsLoading(true);
     setConversationStage("await-jd");
     schedule(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: uid(),
-          type: "ai-text",
-          content: "Great! Describe the role you're looking to fill, or paste a job description. I'll structure it for you.",
-        },
-      ]);
+      appendAIText("Great! Describe the role you're looking to fill, or paste a job description. I'll structure it for you.");
       setIsLoading(false);
     }, 700);
   }
@@ -188,14 +235,7 @@ function WorkspaceInner() {
           {
             delay: 800,
             fn: () => {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: uid(),
-                  type: "ai-text",
-                  content: "Requirements locked in. Let me pull up your matched candidates.",
-                },
-              ]);
+              appendAIText("Requirements locked in. Let me pull up your matched candidates.");
             },
           },
           {
@@ -220,14 +260,7 @@ function WorkspaceInner() {
         // "I'd like to adjust this"
         setConversationStage("await-jd");
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Of course! What would you like to change about the job description?",
-            },
-          ]);
+          appendAIText("Of course! What would you like to change about the job description?");
           setIsLoading(false);
         }, 700);
       }
@@ -235,27 +268,13 @@ function WorkspaceInner() {
       if (option === "Yes, let's refine") {
         setConversationStage("await-jd");
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "What would you like to change? Describe the adjustment and I'll update the requirements.",
-            },
-          ]);
+          appendAIText("What would you like to change? Describe the adjustment and I'll update the requirements.");
           setIsLoading(false);
         }, 700);
       } else {
         // "No, these are fine"
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "No problem. You can continue reviewing the current candidates or reach out if you need adjustments later.",
-            },
-          ]);
+          appendAIText("No problem. You can continue reviewing the current candidates or reach out if you need adjustments later.");
           setIsLoading(false);
         }, 700);
       }
@@ -271,14 +290,7 @@ function WorkspaceInner() {
         {
           delay: 700,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: `Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.`,
-              },
-            ]);
+            appendAIText(`Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.`);
           },
         },
         {
@@ -299,14 +311,7 @@ function WorkspaceInner() {
       ]);
     } else {
       schedule(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: uid(),
-            type: "ai-text",
-            content: `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`,
-          },
-        ]);
+        appendAIText(`Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`);
         setIsLoading(false);
       }, 700);
     }
@@ -319,14 +324,7 @@ function WorkspaceInner() {
         {
           delay: 1400,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Got it. Here's an initial draft based on what you've shared:",
-              },
-            ]);
+            appendAIText("Got it. Here's an initial draft based on what you've shared:");
           },
         },
         {
@@ -341,14 +339,7 @@ function WorkspaceInner() {
         {
           delay: 900,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?",
-              },
-            ]);
+            appendAIText("A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?");
             setIsLoading(false);
             setConversationStage("await-q1");
           },
@@ -360,14 +351,7 @@ function WorkspaceInner() {
         {
           delay: 1000,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Got it. Here's the updated job description:",
-              },
-            ]);
+            appendAIText("Got it. Here's the updated job description:");
           },
         },
         {
@@ -382,14 +366,7 @@ function WorkspaceInner() {
         {
           delay: 700,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Does this look right? Let me know if you'd like to adjust anything.",
-              },
-            ]);
+            appendAIText("Does this look right? Let me know if you'd like to adjust anything.");
           },
         },
         {
@@ -418,14 +395,7 @@ function WorkspaceInner() {
       {
         delay: 900,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Good to know. One more — do you have any timezone preferences for collaboration?",
-            },
-          ]);
+          appendAIText("Good to know. One more — do you have any timezone preferences for collaboration?");
           setIsLoading(false);
           setConversationStage("await-q2");
         },
@@ -439,14 +409,7 @@ function WorkspaceInner() {
       {
         delay: 1000,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Perfect. I've refined the job description with your answers:",
-            },
-          ]);
+          appendAIText("Perfect. I've refined the job description with your answers:");
         },
       },
       {
@@ -461,14 +424,7 @@ function WorkspaceInner() {
       {
         delay: 700,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Does this look right? Let me know if you'd like to adjust anything.",
-            },
-          ]);
+          appendAIText("Does this look right? Let me know if you'd like to adjust anything.");
         },
       },
       {
@@ -527,7 +483,11 @@ function WorkspaceInner() {
             {msg.content}
           </p>
         );
-      case "ai-text":
+      case "ai-text": {
+        const animate = animatedIds.current.has(msg.id) && typeof msg.content === "string";
+        if (animate) {
+          return <TypewriterText text={msg.content as string} threadRef={threadRef} />;
+        }
         return typeof msg.content === "string" ? (
           <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
             {msg.content}
@@ -535,6 +495,7 @@ function WorkspaceInner() {
         ) : (
           <>{msg.content}</>
         );
+      }
       case "user-text":
         return (
           <div className="flex justify-end">
