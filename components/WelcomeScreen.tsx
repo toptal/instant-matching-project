@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ToptalLogo from "./ToptalLogo";
-
-const HEADING = "Welcome to your Matching Workspace.";
-const BODY =
-  "This is your space to find the right hire — at your own pace, without the usual process overhead.\n\nHere you can draft and refine your requirements, explore matched candidates, and track everything in one place. A matching expert is always on standby if you need a human perspective — but there's no pressure to wait for anyone.\n\nWhat kind of role are you looking to fill? Describe it in a few words or paste a job description if you already have one.";
+import { getActiveScenario } from "@/utils/scenarioStorage";
 
 const CHAR_DELAY = 14;
 
@@ -23,7 +20,25 @@ const Cursor = () => (
   />
 );
 
+function getWelcomeText() {
+  const scenario = getActiveScenario();
+  // Always use index 0 — same as MatchingWorkspace — so the two screens show
+  // identical content regardless of how custom scenarios label their steps.
+  const step = scenario[0];
+  const msgs = step.items.filter((i) => i.kind === "message") as {
+    kind: "message";
+    text: string;
+    style?: string;
+  }[];
+  return {
+    heading: msgs.find((m) => m.style === "heading")?.text ?? "",
+    // Accept both explicit style:"text" and no-style (default scenario omits it)
+    body: msgs.find((m) => m.style !== "heading")?.text ?? "",
+  };
+}
+
 export default function WelcomeScreen({ onSubmit }: { onSubmit: (text: string) => void }) {
+  const { heading: HEADING, body: BODY } = getWelcomeText();
   const [headingCount, setHeadingCount] = useState(0);
   const [bodyCount, setBodyCount] = useState(0);
   const [inputVisible, setInputVisible] = useState(false);
