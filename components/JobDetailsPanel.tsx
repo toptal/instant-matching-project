@@ -91,17 +91,17 @@ export default function JobDetailsPanel({ onBack }: Props) {
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {jdVariant === null ? (
           <div
-            className="flex flex-col items-center justify-center h-full text-center gap-2"
-            style={{ color: "#9EA8B3" }}
+            className="flex flex-col items-center text-center gap-2 pt-8"
+            style={{ color: "#6B7585" }}
           >
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect x="6" y="4" width="20" height="24" rx="2" stroke="#D8D9DC" strokeWidth="1.5" />
-              <path d="M10 10h12M10 15h12M10 20h8" stroke="#D8D9DC" strokeWidth="1.5" strokeLinecap="round" />
+              <rect x="6" y="4" width="20" height="24" rx="2" stroke="#9EA8B3" strokeWidth="1.5" />
+              <path d="M10 10h12M10 15h12M10 20h8" stroke="#9EA8B3" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <p className="text-[13px] leading-[20px]">
               No job details yet.
             </p>
-            <p className="text-[12px] leading-[18px]" style={{ color: "#C4C9D0" }}>
+            <p className="text-[12px] leading-[18px]" style={{ color: "#8A94A6" }}>
               They&apos;ll appear here once you describe the role in the chat.
             </p>
           </div>
