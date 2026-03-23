@@ -9,9 +9,10 @@ function CopyIcon() {
 
 interface AISnippetRequirementsProps {
   variant?: "initial" | "refined";
+  versionLabel?: string;
 }
 
-export default function AISnippetRequirements({ variant = "initial" }: AISnippetRequirementsProps) {
+export default function AISnippetRequirements({ variant = "initial", versionLabel }: AISnippetRequirementsProps) {
   const initialKeyRequirements = [
     "5+ years of backend development experience with strong proficiency in Node.js or Python.",
     "Hands-on AWS expertise (EC2, Lambda, RDS, S3, CloudWatch).",
@@ -53,7 +54,7 @@ export default function AISnippetRequirements({ variant = "initial" }: AISnippet
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 shrink-0">
         <span className="text-[13px] leading-[20px]" style={{ color: "#84888e" }}>
-          Job Details
+          {versionLabel ? `Job Details — ${versionLabel}` : "Job Details"}
         </span>
         <CopyIcon />
       </div>

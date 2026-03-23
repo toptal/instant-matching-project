@@ -21,7 +21,7 @@ type Message =
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-video" }
   | { id: string; type: "snippet-steps" }
-  | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined" }
+  | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
   | { id: string; type: "snippet-talents" }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
 
@@ -125,7 +125,7 @@ function uid() {
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner() {
-  const { setActivePhase, triggerMatcherTooltip, markJobDetailsUpdated } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
   const [activeOptions, setActiveOptions] = useState<string[] | null>([
@@ -218,7 +218,6 @@ function WorkspaceInner() {
     if (action === "jd-confirm") {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
-        markJobDetailsUpdated(); // US-027: mark JD as updated for badge
 
         const bulletsContent = (
           <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
@@ -251,6 +250,7 @@ function WorkspaceInner() {
             delay: 300,
             fn: () => {
               setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
+              revealCandidates();
               setIsLoading(false);
               setConversationStage("candidates");
             },
@@ -319,6 +319,7 @@ function WorkspaceInner() {
 
   function handleJDInput(text: string) {
     if (jdVersion.current === 0) {
+      const label = "v1.0";
       // Full Q&A flow
       scheduleSequence([
         {
@@ -332,8 +333,9 @@ function WorkspaceInner() {
           fn: () => {
             setMessages((prev) => [
               ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "initial" },
+              { id: uid(), type: "snippet-requirements", variant: "initial", versionLabel: label },
             ]);
+            updateJobDetails("initial", label);
           },
         },
         {
@@ -346,6 +348,9 @@ function WorkspaceInner() {
         },
       ]);
     } else {
+      const nextVersion = jdVersion.current + 1;
+      const label = `v1.${nextVersion}`;
+      jdVersion.current = nextVersion;
       // Skip Q&A — show updated JD + confirmation
       scheduleSequence([
         {
@@ -359,8 +364,9 @@ function WorkspaceInner() {
           fn: () => {
             setMessages((prev) => [
               ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "refined" },
+              { id: uid(), type: "snippet-requirements", variant: "refined", versionLabel: label },
             ]);
+            updateJobDetails("refined", label);
           },
         },
         {
@@ -386,7 +392,6 @@ function WorkspaceInner() {
           },
         },
       ]);
-      jdVersion.current += 1;
     }
   }
 
@@ -404,7 +409,8 @@ function WorkspaceInner() {
   }
 
   function handleQ2Answer(_text: string) {
-    jdVersion.current += 1;
+    jdVersion.current = 1;
+    const label = "v1.1";
     scheduleSequence([
       {
         delay: 1000,
@@ -417,8 +423,9 @@ function WorkspaceInner() {
         fn: () => {
           setMessages((prev) => [
             ...prev,
-            { id: uid(), type: "snippet-requirements", variant: "refined" },
+            { id: uid(), type: "snippet-requirements", variant: "refined", versionLabel: label },
           ]);
+          updateJobDetails("refined", label);
         },
       },
       {
@@ -527,7 +534,7 @@ function WorkspaceInner() {
       case "snippet-steps":
         return <AISnippetSteps />;
       case "snippet-requirements":
-        return <AISnippetRequirements variant={msg.variant} />;
+        return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents":
         return <AISnippetTalents onPass={handlePass} />;
     }

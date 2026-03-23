@@ -1,3 +1,8 @@
+"use client";
+
+import { usePhase } from "@/context/PhaseContext";
+import AISnippetRequirements from "./AISnippetRequirements";
+
 interface Props {
   onBack: () => void;
 }
@@ -13,6 +18,8 @@ function BackIcon() {
 }
 
 export default function JobDetailsPanel({ onBack }: Props) {
+  const { jdVariant, jdVersionLabel } = usePhase();
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -21,53 +28,33 @@ export default function JobDetailsPanel({ onBack }: Props) {
           <BackIcon />
         </button>
         <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>
-          Job Details
+          {jdVersionLabel ? `Job Details — ${jdVersionLabel}` : "Job Details"}
         </span>
       </div>
 
       <Separator />
 
       {/* Content */}
-      <div
-        className="flex-1 overflow-y-auto px-5 py-4 text-[14px] leading-[22px]"
-        style={{ color: "#455065" }}
-      >
-        <p className="font-semibold mb-1" style={{ color: "#1a1a2e" }}>About the job</p>
-        <p className="mb-3">
-          We are looking for a skilled Front-End Developer to join our team and help create
-          engaging, responsive, and high-performance web applications. You should be proficient
-          in modern front-end technologies, passionate about delivering excellent user
-          experiences, and able to collaborate effectively with designers and back-end developers.
-        </p>
-
-        <p className="font-semibold mb-1" style={{ color: "#1a1a2e" }}>Key Requirements:</p>
-        <ul className="list-none flex flex-col gap-0.5 mb-3">
-          {[
-            "Expertise in HTML, CSS, JavaScript, and frameworks like React or Vue.js.",
-            "Experience with responsive design and cross-browser compatibility.",
-            "Familiarity with RESTful APIs and integrating front-end with back-end systems.",
-            "Knowledge of version control systems like Git.",
-            "Eye for detail and commitment to clean, maintainable code.",
-          ].map((item) => (
-            <li key={item}>• {item}</li>
-          ))}
-        </ul>
-
-        <p className="font-semibold mb-1" style={{ color: "#1a1a2e" }}>Nice to Have:</p>
-        <ul className="list-none flex flex-col gap-0.5 mb-3">
-          {[
-            "Experience with design tools like Figma or Sketch.",
-            "Understanding of accessibility standards (WCAG).",
-            "Basic knowledge of back-end technologies for collaboration.",
-          ].map((item) => (
-            <li key={item}>• {item}</li>
-          ))}
-        </ul>
-
-        <p>
-          This is an exciting opportunity to contribute to projects with real impact and grow in
-          a dynamic team environment. Let&apos;s create amazing digital experiences together!
-        </p>
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {jdVariant === null ? (
+          <div
+            className="flex flex-col items-center justify-center h-full text-center gap-2"
+            style={{ color: "#9EA8B3" }}
+          >
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="6" y="4" width="20" height="24" rx="2" stroke="#D8D9DC" strokeWidth="1.5" />
+              <path d="M10 10h12M10 15h12M10 20h8" stroke="#D8D9DC" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <p className="text-[13px] leading-[20px]">
+              No job details yet.
+            </p>
+            <p className="text-[12px] leading-[18px]" style={{ color: "#C4C9D0" }}>
+              They&apos;ll appear here once you describe the role in the chat.
+            </p>
+          </div>
+        ) : (
+          <AISnippetRequirements variant={jdVariant} versionLabel={jdVersionLabel ?? undefined} />
+        )}
       </div>
     </div>
   );
