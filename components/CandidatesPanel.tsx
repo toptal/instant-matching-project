@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { usePhase } from "@/context/PhaseContext";
 import type { Decision } from "@/data/candidates";
 import CandidateModal from "./CandidateModal";
@@ -236,8 +237,8 @@ export default function CandidatesPanel({ onBack }: Props) {
         </div>
       )}
 
-      {/* Modal — opened from a candidate card click */}
-      {modalIndex !== null && filtered.length > 0 && (
+      {/* Modal — portalled to document.body so it overlays the full viewport */}
+      {modalIndex !== null && filtered.length > 0 && createPortal(
         <CandidateModal
           candidates={filtered}
           currentIndex={modalIndex}
@@ -247,7 +248,8 @@ export default function CandidatesPanel({ onBack }: Props) {
             setCandidateDecision(filtered[localIndex].id, decision);
           }}
           onNavigate={(i) => setModalIndex(i)}
-        />
+        />,
+        document.body
       )}
     </div>
   );
