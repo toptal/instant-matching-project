@@ -21,9 +21,20 @@ type Message =
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-video" }
   | { id: string; type: "snippet-steps" }
-  | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined" }
+  | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
   | { id: string; type: "snippet-talents" }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
+
+// Omit<Message, "id"> distributed over the union
+type MsgPayload =
+  | { type: "ai-heading"; content: string }
+  | { type: "ai-text"; content: React.ReactNode }
+  | { type: "user-text"; content: string }
+  | { type: "snippet-video" }
+  | { type: "snippet-steps" }
+  | { type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
+  | { type: "snippet-talents" }
+  | { type: "interaction-options"; options: string[]; action: string };
 
 const INITIAL_MESSAGES: Message[] = [
   {
@@ -38,22 +49,6 @@ const INITIAL_MESSAGES: Message[] = [
       "In this short video we are explaining your next steps and the purpose of this workspace. Please watch the video to continue.",
   },
   { id: "3", type: "snippet-video" },
-  {
-    id: "4",
-    type: "ai-text",
-    content: (
-      <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-        <p className="mb-1">Here&apos;s what you&apos;ll learn from this video:</p>
-        <ul className="list-disc pl-5 flex flex-col gap-0.5">
-          <li>How to collaborate with us on defining your requirements</li>
-          <li>How we suggest initial candidate matches based on your needs</li>
-          <li>How your feedback improves future recommendations</li>
-          <li>How to communicate via text or use voice mode to discuss the details more naturally</li>
-          <li>How and when a matcher can step in for additional support</li>
-        </ul>
-      </div>
-    ),
-  },
   {
     id: "5",
     type: "ai-text",
@@ -71,6 +66,37 @@ const INITIAL_MESSAGES: Message[] = [
     content: "Can we jump to your requirements?",
   },
 ];
+
+// Word-by-word typewriter reveal for string AI messages
+function TypewriterText({ text }: { text: string }) {
+  const words = text.split(" ");
+  return (
+    <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+      {words.map((word, i) => (
+        <span
+          key={i}
+          style={{
+            opacity: 0,
+            animation: "word-fade-in 0.12s ease forwards",
+            animationDelay: `${i * 28}ms`,
+          }}
+        >
+          {word}
+          {i < words.length - 1 ? " " : ""}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+// Fade-in wrapper for JSX blocks and snippets
+function FadeIn({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ animation: "fade-in 0.35s ease forwards", opacity: 0 }}>
+      {children}
+    </div>
+  );
+}
 
 function TypingIndicator() {
   return (
@@ -113,6 +139,8 @@ function WorkspaceInner() {
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const passCountRef = useRef(0);
   const jdVersion = useRef(0);
+  // Track which message IDs should animate (dynamically appended ones)
+  const animatedIds = useRef(new Set<string>());
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -125,9 +153,7 @@ function WorkspaceInner() {
   }, [messages]);
 
   function schedule(fn: () => void, delay: number) {
-    const t = setTimeout(() => {
-      fn();
-    }, delay);
+    const t = setTimeout(fn, delay);
     pendingTimeouts.current.push(t);
   }
 
@@ -145,49 +171,66 @@ function WorkspaceInner() {
     });
   }
 
+  // Append a message and mark it as animated
+  function appendAnimated(msg: MsgPayload) {
+    const id = uid();
+    animatedIds.current.add(id);
+    setMessages((prev) => [...prev, { id, ...msg } as Message]);
+  }
+
   function appendAI(content: React.ReactNode, delay = 700) {
     schedule(() => {
-      setMessages((prev) => [...prev, { id: uid(), type: "ai-text", content }]);
+      appendAnimated({ type: "ai-text", content });
       setIsLoading(false);
     }, delay);
   }
 
   // Pinned bottom pills (mode selection)
   function handleOptionSelect(option: string) {
-    setMessages((prev) => [
-      ...prev,
-      { id: uid(), type: "user-text", content: option },
-    ]);
+    const msgId = uid();
+    animatedIds.current.add(msgId);
+    setMessages((prev) => [...prev, { id: msgId, type: "user-text", content: option }]);
     setActiveOptions(null);
-    setActivePhase(2); // advance: Intro → Validate Requirements
+    setActivePhase(2); // advance: Intro → Draft Requirements
     setIsLoading(true);
     setConversationStage("await-jd");
-    schedule(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: uid(),
-          type: "ai-text",
-          content: "Great! Describe the role you're looking to fill, or paste a job description. I'll structure it for you.",
+    scheduleSequence([
+      {
+        delay: 500,
+        fn: () => {
+          appendAnimated({ type: "ai-text", content: "Great, let's move on. We're now in the requirements phase — I'll help you define exactly what you're looking for." });
         },
-      ]);
-      setIsLoading(false);
-    }, 700);
+      },
+      {
+        delay: 300,
+        fn: () => {
+          appendAnimated({ type: "snippet-steps" });
+        },
+      },
+      {
+        delay: 700,
+        fn: () => {
+          appendAnimated({ type: "ai-text", content: "Describe the role you're looking to fill, or paste a job description. I'll structure it for you." });
+          setIsLoading(false);
+        },
+      },
+    ]);
   }
 
   // Inline thread interaction-options
   function handleThreadOption(msgId: string, option: string, action: string) {
     // Remove the pills message, post user reply
+    const newId = uid();
+    animatedIds.current.add(newId);
     setMessages((prev) => [
       ...prev.filter((m) => m.id !== msgId),
-      { id: uid(), type: "user-text", content: option },
+      { id: newId, type: "user-text", content: option },
     ]);
     setIsLoading(true);
 
     if (action === "jd-confirm") {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
-        markJobDetailsUpdated(); // US-027: mark JD as updated for badge
 
         const bulletsContent = (
           <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
@@ -202,31 +245,33 @@ function WorkspaceInner() {
 
         scheduleSequence([
           {
-            delay: 800,
+            delay: 500,
             fn: () => {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: uid(),
-                  type: "ai-text",
-                  content: "Requirements locked in. Let me pull up your matched candidates.",
-                },
-              ]);
-            },
-          },
-          {
-            delay: 400,
-            fn: () => {
-              setMessages((prev) => [
-                ...prev,
-                { id: uid(), type: "ai-text", content: bulletsContent },
-              ]);
+              appendAnimated({ type: "ai-text", content: "Requirements confirmed. Now let's move on to finding your match." });
             },
           },
           {
             delay: 300,
             fn: () => {
-              setMessages((prev) => [...prev, { id: uid(), type: "snippet-talents" }]);
+              appendAnimated({ type: "snippet-steps" });
+            },
+          },
+          {
+            delay: 700,
+            fn: () => {
+              appendAnimated({ type: "ai-text", content: "Let me pull up your matched candidates." });
+            },
+          },
+          {
+            delay: 300,
+            fn: () => {
+              appendAnimated({ type: "ai-text", content: bulletsContent });
+            },
+          },
+          {
+            delay: 200,
+            fn: () => {
+              appendAnimated({ type: "snippet-talents" });
               setIsLoading(false);
               setConversationStage("candidates");
             },
@@ -236,14 +281,7 @@ function WorkspaceInner() {
         // "I'd like to adjust this"
         setConversationStage("await-jd");
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Of course! What would you like to change about the job description?",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "Of course! What would you like to change about the job description?" });
           setIsLoading(false);
         }, 700);
       }
@@ -251,27 +289,13 @@ function WorkspaceInner() {
       if (option === "Yes, let's refine") {
         setConversationStage("await-jd");
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "What would you like to change? Describe the adjustment and I'll update the requirements.",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "What would you like to change? Describe the adjustment and I'll update the requirements." });
           setIsLoading(false);
         }, 700);
       } else {
         // "No, these are fine"
         schedule(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "No problem. You can continue reviewing the current candidates or reach out if you need adjustments later.",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "No problem. You can continue reviewing the current candidates or reach out if you need adjustments later." });
           setIsLoading(false);
         }, 700);
       }
@@ -287,145 +311,94 @@ function WorkspaceInner() {
         {
           delay: 700,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: `Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.`,
-              },
-            ]);
+            appendAnimated({ type: "ai-text", content: `Thanks for the feedback on ${candidateName}. Based on your responses, it looks like we may need to refine the requirements for better matches.` });
           },
         },
         {
           delay: 600,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "interaction-options",
-                options: ["Yes, let's refine", "No, these are fine"],
-                action: "refine-confirm",
-              },
-            ]);
+            appendAnimated({
+              type: "interaction-options",
+              options: ["Yes, let's refine", "No, these are fine"],
+              action: "refine-confirm",
+            });
             setIsLoading(false);
           },
         },
       ]);
     } else {
       schedule(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: uid(),
-            type: "ai-text",
-            content: `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`,
-          },
-        ]);
+        appendAnimated({ type: "ai-text", content: `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.` });
         setIsLoading(false);
       }, 700);
     }
   }
 
-  function handleJDInput(text: string) {
+  function handleJDInput(_text: string) {
     if (jdVersion.current === 0) {
-      // Full Q&A flow
+      // First time — full Q&A flow
+      const label = "v1.0";
       scheduleSequence([
         {
           delay: 1400,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Got it. Here's an initial draft based on what you've shared:",
-              },
-            ]);
+            appendAnimated({ type: "ai-text", content: "Got it. Here's an initial draft based on what you've shared:" });
           },
         },
         {
           delay: 100,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "initial" },
-            ]);
+            appendAnimated({ type: "snippet-requirements", variant: "initial", versionLabel: label });
+            markJobDetailsUpdated(label);
           },
         },
         {
           delay: 900,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?",
-              },
-            ]);
+            appendAnimated({ type: "ai-text", content: "A couple of quick questions to sharpen this. First — will this person be working closely with a team or more independently?" });
             setIsLoading(false);
             setConversationStage("await-q1");
           },
         },
       ]);
     } else {
-      // Skip Q&A — show updated JD + confirmation
+      // Subsequent update — skip Q&A, show updated JD + confirmation
+      const nextVersion = jdVersion.current + 1;
+      const label = `v1.${nextVersion}`;
+      jdVersion.current = nextVersion;
       scheduleSequence([
         {
           delay: 1000,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Got it. Here's the updated job description:",
-              },
-            ]);
+            appendAnimated({ type: "ai-text", content: "Got it. Here's the updated job description:" });
           },
         },
         {
           delay: 100,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              { id: uid(), type: "snippet-requirements", variant: "refined" },
-            ]);
+            appendAnimated({ type: "snippet-requirements", variant: "refined", versionLabel: label });
+            markJobDetailsUpdated(label);
           },
         },
         {
           delay: 700,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "ai-text",
-                content: "Does this look right? Let me know if you'd like to adjust anything.",
-              },
-            ]);
+            appendAnimated({ type: "ai-text", content: "Does this look right? Let me know if you'd like to adjust anything." });
           },
         },
         {
           delay: 300,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "interaction-options",
-                options: ["Yes, looks good", "I'd like to adjust this"],
-                action: "jd-confirm",
-              },
-            ]);
+            appendAnimated({
+              type: "interaction-options",
+              options: ["Yes, looks good", "I'd like to adjust this"],
+              action: "jd-confirm",
+            });
             setIsLoading(false);
             setConversationStage("open");
           },
         },
       ]);
-      jdVersion.current += 1;
     }
   }
 
@@ -434,14 +407,7 @@ function WorkspaceInner() {
       {
         delay: 900,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Good to know. One more — do you have any timezone preferences for collaboration?",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "Good to know. One more — do you have any timezone preferences for collaboration?" });
           setIsLoading(false);
           setConversationStage("await-q2");
         },
@@ -450,55 +416,36 @@ function WorkspaceInner() {
   }
 
   function handleQ2Answer(_text: string) {
-    jdVersion.current += 1;
+    jdVersion.current += 1; // 0 → 1
+    const label = "v1.1";
     scheduleSequence([
       {
         delay: 1000,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Perfect. I've refined the job description with your answers:",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "Perfect. I've refined the job description with your answers:" });
         },
       },
       {
         delay: 100,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            { id: uid(), type: "snippet-requirements", variant: "refined" },
-          ]);
+          appendAnimated({ type: "snippet-requirements", variant: "refined", versionLabel: label });
+          markJobDetailsUpdated(label);
         },
       },
       {
         delay: 700,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "ai-text",
-              content: "Does this look right? Let me know if you'd like to adjust anything.",
-            },
-          ]);
+          appendAnimated({ type: "ai-text", content: "Does this look right? Let me know if you'd like to adjust anything." });
         },
       },
       {
         delay: 300,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "interaction-options",
-              options: ["Yes, looks good", "I'd like to adjust this"],
-              action: "jd-confirm",
-            },
-          ]);
+          appendAnimated({
+            type: "interaction-options",
+            options: ["Yes, looks good", "I'd like to adjust this"],
+            action: "jd-confirm",
+          });
           setIsLoading(false);
           setConversationStage("open");
         },
@@ -507,10 +454,9 @@ function WorkspaceInner() {
   }
 
   function handleSend(text: string) {
-    setMessages((prev) => [
-      ...prev,
-      { id: uid(), type: "user-text", content: text },
-    ]);
+    const msgId = uid();
+    animatedIds.current.add(msgId);
+    setMessages((prev) => [...prev, { id: msgId, type: "user-text", content: text }]);
     setIsLoading(true);
 
     // Keyword detection for matcher tooltip (US-029)
@@ -536,6 +482,8 @@ function WorkspaceInner() {
   }
 
   function renderMessage(msg: Message) {
+    const animated = animatedIds.current.has(msg.id);
+
     switch (msg.type) {
       case "ai-heading":
         return (
@@ -543,28 +491,41 @@ function WorkspaceInner() {
             {msg.content}
           </p>
         );
-      case "ai-text":
-        return typeof msg.content === "string" ? (
-          <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-            {msg.content}
-          </p>
+      case "ai-text": {
+        if (typeof msg.content === "string") {
+          return animated ? (
+            <TypewriterText text={msg.content} />
+          ) : (
+            <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+              {msg.content}
+            </p>
+          );
+        }
+        return animated ? (
+          <FadeIn>{msg.content}</FadeIn>
         ) : (
           <>{msg.content}</>
         );
+      }
       case "user-text":
         return (
-          <div className="flex justify-end">
-            <div
-              className="text-[14px] leading-[22px] px-4 py-2 rounded-2xl max-w-[80%]"
-              style={{ background: "#F3F4F6", color: "#1a1a2e" }}
-            >
-              {msg.content}
+          <div className={animated ? "" : ""} style={animated ? { animation: "fade-in 0.2s ease forwards", opacity: 0 } : {}}>
+            <div className="flex justify-end">
+              <div
+                className="text-[14px] leading-[22px] px-4 py-2 rounded-2xl max-w-[80%]"
+                style={{ background: "#F3F4F6", color: "#1a1a2e" }}
+              >
+                {msg.content}
+              </div>
             </div>
           </div>
         );
       case "interaction-options":
         return (
-          <div className="flex gap-2 flex-wrap">
+          <div
+            className="flex gap-2 flex-wrap"
+            style={animated ? { animation: "fade-in 0.3s ease forwards", opacity: 0 } : {}}
+          >
             {msg.options.map((opt) => (
               <button
                 key={opt}
@@ -578,13 +539,17 @@ function WorkspaceInner() {
           </div>
         );
       case "snippet-video":
-        return <VideoSnippet />;
+        return animated ? <FadeIn><VideoSnippet /></FadeIn> : <VideoSnippet />;
       case "snippet-steps":
-        return <AISnippetSteps />;
+        return animated ? <FadeIn><AISnippetSteps /></FadeIn> : <AISnippetSteps />;
       case "snippet-requirements":
-        return <AISnippetRequirements variant={msg.variant} />;
+        return animated ? (
+          <FadeIn><AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} /></FadeIn>
+        ) : (
+          <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />
+        );
       case "snippet-talents":
-        return <AISnippetTalents onPass={handlePass} />;
+        return animated ? <FadeIn><AISnippetTalents onPass={handlePass} /></FadeIn> : <AISnippetTalents onPass={handlePass} />;
     }
   }
 
@@ -619,8 +584,11 @@ function WorkspaceInner() {
               overflow: "hidden",
             }}
           >
-            {/* Heading */}
-            <div className="shrink-0 pb-4" style={{ position: "sticky", top: 0, background: "white", zIndex: 10 }}>
+            {/* Heading — sticky */}
+            <div
+              className="shrink-0 pb-4"
+              style={{ position: "sticky", top: 0, background: "white", zIndex: 10 }}
+            >
               <h1
                 className="font-bold leading-tight mb-2"
                 style={{ fontSize: 26, color: "#1a1a2e", letterSpacing: "-0.3px" }}
@@ -640,7 +608,7 @@ function WorkspaceInner() {
               </div>
             </div>
 
-            {/* Pinned bottom area: action buttons + input */}
+            {/* Pinned bottom */}
             <div
               className="shrink-0 pt-3 flex flex-col gap-2"
               style={{
@@ -661,7 +629,7 @@ function WorkspaceInner() {
                   ))}
                 </div>
               )}
-              <ChatInput onSend={handleSend} isLoading={isLoading} onStop={cancelAll} />
+              <ChatInput onSend={handleSend} onStop={cancelAll} isLoading={isLoading} />
             </div>
           </div>
 

@@ -39,6 +39,7 @@ function StepIcon({ status }: { status: StepStatus }) {
 
 export default function AISnippetSteps() {
   const { activePhase } = usePhase();
+  const progress = Math.round((activePhase / (STEP_LABELS.length - 1)) * 100);
   return (
     <div
       className="flex flex-col gap-4 rounded-lg w-full"
@@ -48,7 +49,20 @@ export default function AISnippetSteps() {
         padding: "16px 24px",
       }}
     >
-      <p className="font-semibold text-[16px] leading-[24px] text-black">Where we are now?</p>
+      <div>
+        <p className="font-semibold text-[16px] leading-[24px] text-black mb-2">Where we are now?</p>
+        <div style={{ height: 4, background: "#EBECED", borderRadius: 2 }}>
+          <div
+            style={{
+              height: "100%",
+              width: `${progress}%`,
+              background: "#204ECF",
+              borderRadius: 2,
+              transition: "width 0.6s ease",
+            }}
+          />
+        </div>
+      </div>
       <div className="flex flex-col gap-2">
         {STEP_LABELS.map((label, i) => {
           const status: StepStatus = i < activePhase ? "done" : i === activePhase ? "current" : "pending";

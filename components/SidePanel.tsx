@@ -15,7 +15,7 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount, jobDetailsUpdated, markJobDetailsViewed, interestedCount } = usePhase();
+  const { tooltipTriggerCount, jobDetailsUpdated, jobDetailsVersion, markJobDetailsViewed, interestedCount } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -93,7 +93,7 @@ export default function SidePanel() {
             <div className="flex flex-col">
               <NavRow
                 label="Job Details"
-                badge={jobDetailsUpdated ? "Updated" : undefined}
+                badge={jobDetailsUpdated ? (jobDetailsVersion ? `Updated to ${jobDetailsVersion}` : "Updated") : undefined}
                 onClick={openJobDetails}
               />
               <Separator />

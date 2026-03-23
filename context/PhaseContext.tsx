@@ -22,7 +22,8 @@ interface PhaseContextValue {
   triggerMatcherTooltip: () => void;
   // US-027: badge tracking
   jobDetailsUpdated: boolean;
-  markJobDetailsUpdated: () => void;
+  jobDetailsVersion: string | null;
+  markJobDetailsUpdated: (versionLabel: string) => void;
   markJobDetailsViewed: () => void;
   // US-027 + US-039: shared candidate decisions
   candidateDecisions: Decision[];
@@ -39,6 +40,7 @@ const PhaseContext = createContext<PhaseContextValue>({
   tooltipTriggerCount: 0,
   triggerMatcherTooltip: () => {},
   jobDetailsUpdated: false,
+  jobDetailsVersion: null,
   markJobDetailsUpdated: () => {},
   markJobDetailsViewed: () => {},
   candidateDecisions: [null, null, null],
@@ -51,6 +53,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
   const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
   const [jobDetailsUpdated, setJobDetailsUpdated] = useState(false);
+  const [jobDetailsVersion, setJobDetailsVersion] = useState<string | null>(null);
   const [candidateDecisions, setCandidateDecisions] = useState<Decision[]>([null, null, null]);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[][]>([[], [], []]);
 
@@ -58,8 +61,9 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
     setTooltipTriggerCount((n) => n + 1);
   }
 
-  function markJobDetailsUpdated() {
+  function markJobDetailsUpdated(versionLabel: string) {
     setJobDetailsUpdated(true);
+    setJobDetailsVersion(versionLabel);
   }
 
   function markJobDetailsViewed() {
@@ -90,6 +94,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         tooltipTriggerCount,
         triggerMatcherTooltip,
         jobDetailsUpdated,
+        jobDetailsVersion,
         markJobDetailsUpdated,
         markJobDetailsViewed,
         candidateDecisions,
