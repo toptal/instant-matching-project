@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import type { Decision } from "@/data/candidates";
+import { CANDIDATES } from "@/data/candidates";
 
 const PHASE_LABELS = [
   "Intro",
@@ -28,7 +29,10 @@ interface PhaseContextValue {
   markJobDetailsViewed: () => void;
   // Candidates — hidden until revealed in thread
   candidatesRevealed: boolean;
+  revealedCount: number;
+  candidatesNew: boolean;
   revealCandidates: () => void;
+  markCandidatesViewed: () => void;
   // US-027 + US-039: shared candidate decisions
   candidateDecisions: Decision[];
   setCandidateDecision: (index: number, decision: Decision) => void;
@@ -49,7 +53,10 @@ const PhaseContext = createContext<PhaseContextValue>({
   updateJobDetails: () => {},
   markJobDetailsViewed: () => {},
   candidatesRevealed: false,
+  revealedCount: 0,
+  candidatesNew: false,
   revealCandidates: () => {},
+  markCandidatesViewed: () => {},
   candidateDecisions: [null, null, null],
   setCandidateDecision: () => {},
   interestedCount: 0,
@@ -63,6 +70,8 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jobDetailsUpdated, setJobDetailsUpdated] = useState(false);
   const [candidatesRevealed, setCandidatesRevealed] = useState(false);
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [candidatesNew, setCandidatesNew] = useState(false);
   const [candidateDecisions, setCandidateDecisions] = useState<Decision[]>([null, null, null]);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[][]>([[], [], []]);
 
@@ -82,6 +91,12 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
 
   function revealCandidates() {
     setCandidatesRevealed(true);
+    setRevealedCount(CANDIDATES.length);
+    setCandidatesNew(true);
+  }
+
+  function markCandidatesViewed() {
+    setCandidatesNew(false);
   }
 
   function setCandidateDecision(index: number, decision: Decision) {
@@ -113,7 +128,10 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         updateJobDetails,
         markJobDetailsViewed,
         candidatesRevealed,
+        revealedCount,
+        candidatesNew,
         revealCandidates,
+        markCandidatesViewed,
         candidateDecisions,
         setCandidateDecision,
         interestedCount,
