@@ -129,17 +129,19 @@ const SNIPPET_THINK_MS = 1400;
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
 
-  // When arriving from the welcome screen, pre-populate step 0 messages as static
-  // (non-animated) so the thread shows the welcome content without re-typing it.
+  // When arriving from the welcome screen, pre-populate step 0 messages and the
+  // user's own message as static content so they're never re-appended by effects.
+  // State initializers run exactly once, so this is safe under StrictMode.
   const [messages, setMessages] = useState<Message[]>(() => {
     if (!initialMessage) return [];
-    return SCENARIO[0].items
+    const step0: Message[] = SCENARIO[0].items
       .filter((item): item is Extract<typeof item, { kind: "message" }> => item.kind === "message")
       .map((item) => ({
         id: uid(),
         type: item.style === "heading" ? ("ai-heading" as const) : ("ai-text" as const),
         content: item.text,
       }));
+    return [...step0, { id: uid(), type: "user-text", content: initialMessage }];
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -282,8 +284,11 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   // instead post the user's message then advance directly to step 1.
   useEffect(() => {
     if (initialMessage) {
-      currentStepRef.current = 0; // skip step 0 (welcome)
-      advanceScenario(initialMessage);
+      // Step 0 messages and the user message are already in state (initializer above).
+      // Just play step 1 directly — no need to call advanceScenario which would
+      // append the user message a second time.
+      currentStepRef.current = 1;
+      playScenarioStep(1);
     } else {
       playScenarioStep(0);
     }
