@@ -25,44 +25,19 @@ type Message =
   | { id: string; type: "snippet-talents" }
   | { id: string; type: "interaction-options"; options: string[]; action: string };
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "1",
-    type: "ai-heading",
-    content: "Welcome to your Matching Workspace.",
-  },
-  {
-    id: "2",
-    type: "ai-text",
-    content:
-      "In this short video we are explaining your next steps and the purpose of this workspace. Please watch the video to continue.",
-  },
-  { id: "3", type: "snippet-video" },
-  {
-    id: "5",
-    type: "ai-text",
-    content: (
-      <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-        <p>Thank you for watching the video.</p>
-        <p>Here&apos;s what&apos;s coming next.</p>
-      </div>
-    ),
-  },
-  { id: "6", type: "snippet-steps" },
-  {
-    id: "7",
-    type: "ai-text",
-    content: "Can we jump to your requirements?",
-  },
-];
+const INITIAL_MESSAGES: Message[] = [];
 
 // Character-by-character typewriter for dynamically-appended AI messages
 function TypewriterText({
   text,
   threadRef,
+  className = "text-[14px] leading-[22px]",
+  style = { color: "#455065" },
 }: {
   text: string;
   threadRef: React.RefObject<HTMLDivElement | null>;
+  className?: string;
+  style?: React.CSSProperties;
 }) {
   const [count, setCount] = useState(0);
 
@@ -78,7 +53,7 @@ function TypewriterText({
   }, [count, text, threadRef]);
 
   return (
-    <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+    <p className={className} style={style}>
       {text.slice(0, count)}
       {count < text.length && (
         <span
@@ -128,25 +103,18 @@ function WorkspaceInner() {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeOptions, setActiveOptions] = useState<string[] | null>([
-    "Yes, let's use the voice mode",
-    "Yes, let's chat",
-  ]);
+  const [activeOptions, setActiveOptions] = useState<string[] | null>(null);
   const [pinnedInteraction, setPinnedInteraction] = useState<{ options: string[]; action: string } | null>(null);
   const [conversationStage, setConversationStage] = useState<ConversationStage>("intro");
+  const [videoWatched, setVideoWatched] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
   const pendingTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
   const passCountRef = useRef(0);
   const jdVersion = useRef(0);
-  // IDs of AI messages that should animate (dynamically appended, not initial)
+  // IDs of AI messages that should animate (dynamically appended)
   const animatedIds = useRef(new Set<string>());
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
@@ -173,6 +141,13 @@ function WorkspaceInner() {
     });
   }
 
+  // Append an animated AI heading string (typewriter effect)
+  function appendAnimatedHeading(text: string) {
+    const id = uid();
+    animatedIds.current.add(id);
+    setMessages((prev) => [...prev, { id, type: "ai-heading", content: text }]);
+  }
+
   // Append an animated AI text string (typewriter effect)
   function appendAIText(text: string) {
     const id = uid();
@@ -190,6 +165,35 @@ function WorkspaceInner() {
       setIsLoading(false);
     }, delay);
   }
+
+  // Intro sequence — runs once on mount, stops after video snippet
+  useEffect(() => {
+    scheduleSequence([
+      // "Welcome to your Matching Workspace." — 36 chars
+      { delay: 400, fn: () => appendAnimatedHeading("Welcome to your Matching Workspace.") },
+      // 36 * 15ms + 500 buffer
+      { delay: 1040, fn: () => appendAIText("In this short video we are explaining your next steps and the purpose of this workspace. Please watch the video to continue.") },
+      // 124 * 15ms + 800 buffer
+      { delay: 2660, fn: () => setMessages((prev) => [...prev, { id: uid(), type: "snippet-video" }]) },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Post-video sequence — runs once the user finishes watching
+  useEffect(() => {
+    if (!videoWatched) return;
+    scheduleSequence([
+      { delay: 600, fn: () => appendAIText("Thank you for watching the video.") },
+      // 33 * 15ms + 400 buffer
+      { delay: 895, fn: () => appendAIText("Here's what's coming next.") },
+      // 26 * 15ms + 400 buffer
+      { delay: 790, fn: () => setMessages((prev) => [...prev, { id: uid(), type: "snippet-steps" }]) },
+      { delay: 700, fn: () => appendAIText("Can we jump to your requirements?") },
+      // 32 * 15ms + 500 buffer — reveal mode-selection pills
+      { delay: 980, fn: () => setActiveOptions(["Yes, let's use the voice mode", "Yes, let's chat"]) },
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoWatched]);
 
   // Pinned bottom pills (mode selection)
   function handleOptionSelect(option: string) {
@@ -462,12 +466,24 @@ function WorkspaceInner() {
 
   function renderMessage(msg: Message) {
     switch (msg.type) {
-      case "ai-heading":
+      case "ai-heading": {
+        const animate = animatedIds.current.has(msg.id);
+        if (animate) {
+          return (
+            <TypewriterText
+              text={msg.content}
+              threadRef={threadRef}
+              className="font-semibold text-[20px] leading-[30px]"
+              style={{ color: "#455065" }}
+            />
+          );
+        }
         return (
           <p className="font-semibold text-[20px] leading-[30px]" style={{ color: "#455065" }}>
             {msg.content}
           </p>
         );
+      }
       case "ai-text": {
         const animate = animatedIds.current.has(msg.id) && typeof msg.content === "string";
         if (animate) {
@@ -508,7 +524,7 @@ function WorkspaceInner() {
           </div>
         );
       case "snippet-video":
-        return <VideoSnippet />;
+        return <VideoSnippet onWatched={() => setVideoWatched(true)} />;
       case "snippet-steps":
         return <AISnippetSteps />;
       case "snippet-requirements":
