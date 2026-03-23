@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { usePhase } from "@/context/PhaseContext";
 import type { Decision } from "@/data/candidates";
+import CandidateModal from "./CandidateModal";
 
 type FilterOption = "all" | "interested" | "not-a-fit" | "not-reviewed";
 
@@ -129,8 +130,9 @@ function DecisionBadge({ decision }: { decision: Decision }) {
 }
 
 export default function CandidatesPanel({ onBack }: Props) {
-  const { candidateDecisions, interestedCount, candidatesRevealed, revealedCandidates } = usePhase();
+  const { candidateDecisions, setCandidateDecision, interestedCount, candidatesRevealed, revealedCandidates } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested");
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const filtered = revealedCandidates.filter((c) => {
     const d = candidateDecisions[c.id] ?? null;
@@ -195,13 +197,14 @@ export default function CandidatesPanel({ onBack }: Props) {
                 No candidates match this filter.
               </p>
             ) : (
-              filtered.map((c) => {
+              filtered.map((c, i) => {
                 const decision = candidateDecisions[c.id] ?? null;
                 return (
-                  <div
+                  <button
                     key={c.id}
-                    className="relative flex flex-col gap-3 p-3 rounded-lg"
-                    style={{ background: "#F3F4F6" }}
+                    className="relative flex flex-col gap-3 p-3 rounded-lg text-left w-full"
+                    style={{ background: "#F3F4F6", cursor: "pointer" }}
+                    onClick={() => setModalIndex(i)}
                   >
                     {/* Decision badge — left-edge pill */}
                     <DecisionBadge decision={decision} />
@@ -225,12 +228,26 @@ export default function CandidatesPanel({ onBack }: Props) {
                         {c.role}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
           </div>
         </div>
+      )}
+
+      {/* Modal — opened from a candidate card click */}
+      {modalIndex !== null && filtered.length > 0 && (
+        <CandidateModal
+          candidates={filtered}
+          currentIndex={modalIndex}
+          decisions={filtered.map((c) => candidateDecisions[c.id] ?? null)}
+          onClose={() => setModalIndex(null)}
+          onDecide={(localIndex, decision) => {
+            setCandidateDecision(filtered[localIndex].id, decision);
+          }}
+          onNavigate={(i) => setModalIndex(i)}
+        />
       )}
     </div>
   );
