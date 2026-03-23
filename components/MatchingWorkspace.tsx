@@ -9,8 +9,8 @@ import AISnippetSteps from "./AISnippetSteps";
 import AISnippetRequirements from "./AISnippetRequirements";
 import AISnippetTalents from "./AISnippetTalents";
 import { PhaseProvider, usePhase } from "@/context/PhaseContext";
-import { SCENARIO } from "@/data/scenario";
 import type { SnippetItem } from "@/data/scenario";
+import { getActiveScenario } from "@/utils/scenarioStorage";
 
 const TOOLTIP_KEYWORDS = [
   "requirements",
@@ -129,12 +129,15 @@ const SNIPPET_THINK_MS = 1400;
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
 
+  // Resolved once on mount — picks up any custom scenario saved in localStorage.
+  const scenario = useRef(getActiveScenario());
+
   // When arriving from the welcome screen, pre-populate step 0 messages and the
   // user's own message as static content so they're never re-appended by effects.
   // State initializers run exactly once, so this is safe under StrictMode.
   const [messages, setMessages] = useState<Message[]>(() => {
     if (!initialMessage) return [];
-    const step0: Message[] = SCENARIO[0].items
+    const step0: Message[] = scenario.current[0].items
       .filter((item): item is Extract<typeof item, { kind: "message" }> => item.kind === "message")
       .map((item) => ({
         id: uid(),
@@ -224,8 +227,8 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // Play a scenario step: schedule all messages, snippets, and response chips
   function playScenarioStep(stepIndex: number) {
-    if (stepIndex >= SCENARIO.length) return;
-    const step = SCENARIO[stepIndex];
+    if (stepIndex >= scenario.current.length) return;
+    const step = scenario.current[stepIndex];
     currentStepRef.current = stepIndex;
 
     setActiveOptions(null);
