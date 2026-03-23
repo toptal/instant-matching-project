@@ -99,7 +99,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
   return (
     <>
-      <div className="relative w-full">
+      <div className="relative w-full" style={{ paddingBottom: ghostCount * 8 }}>
         {/* Ghost cards — fixed count matches batch size so deck never shrinks */}
         {Array.from({ length: ghostCount }, (_, pos) => {
           const step = 8;
@@ -112,7 +112,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                 top: 0,
                 left: stepsBack * 16,
                 right: stepsBack * 16,
-                bottom: -stepsBack * step,
+                bottom: (ghostCount - stepsBack) * step,
                 border: "1px solid #EBECED",
                 boxShadow: "0 0 8px rgba(0,0,0,0.08)",
                 background: "white url('/card-bg.png') center/cover no-repeat",
@@ -220,12 +220,13 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
           </div>
         )}
 
-        {allDecided && (
-          <p className="text-[13px] text-center w-full mt-3" style={{ color: "#455065" }}>
-            All candidates reviewed. Your feedback has been sent.
-          </p>
-        )}
       </div>
+
+      {allDecided && (
+        <p className="text-[13px] text-center w-full mt-3" style={{ color: "#455065" }}>
+          All candidates reviewed. Your feedback has been sent.
+        </p>
+      )}
 
       {/* Modal */}
       {modalIndex !== null && (
