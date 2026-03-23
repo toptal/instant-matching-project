@@ -120,9 +120,22 @@ function uid() {
 }
 
 // Inner component so it can access PhaseContext
-function WorkspaceInner() {
+function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
-  const [messages, setMessages] = useState<Message[]>([]);
+
+  // When arriving from the welcome screen, pre-populate step 0 messages as static
+  // (non-animated) so the thread shows the welcome content without re-typing it.
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (!initialMessage) return [];
+    return SCENARIO[0].items
+      .filter((item): item is Extract<typeof item, { kind: "message" }> => item.kind === "message")
+      .map((item) => ({
+        id: uid(),
+        type: item.style === "heading" ? ("ai-heading" as const) : ("ai-text" as const),
+        content: item.text,
+      }));
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [activeOptions, setActiveOptions] = useState<string[] | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -255,9 +268,20 @@ function WorkspaceInner() {
     playScenarioStep(currentStepRef.current + 1);
   }
 
-  // Start the scenario on mount
+  // Start the scenario on mount.
+  // If an initialMessage was provided from the welcome screen, the step 0 messages
+  // have already been pre-populated as static text above. Skip replaying them and
+  // instead post the user's message then advance directly to step 1.
   useEffect(() => {
-    playScenarioStep(0);
+    if (initialMessage) {
+      currentStepRef.current = 0; // skip step 0 (welcome)
+      advanceScenario(initialMessage);
+    } else {
+      playScenarioStep(0);
+    }
+    // Cancel any pending timeouts on unmount (also prevents StrictMode
+    // double-invocation from firing two sets of scheduled messages).
+    return cancelAll;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -450,10 +474,10 @@ function WorkspaceInner() {
   );
 }
 
-export default function MatchingWorkspace() {
+export default function MatchingWorkspace({ initialMessage }: { initialMessage?: string }) {
   return (
     <PhaseProvider>
-      <WorkspaceInner />
+      <WorkspaceInner initialMessage={initialMessage} />
     </PhaseProvider>
   );
 }
