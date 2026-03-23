@@ -39,22 +39,6 @@ const INITIAL_MESSAGES: Message[] = [
   },
   { id: "3", type: "snippet-video" },
   {
-    id: "4",
-    type: "ai-text",
-    content: (
-      <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
-        <p className="mb-1">Here&apos;s what you&apos;ll learn from this video:</p>
-        <ul className="list-disc pl-5 flex flex-col gap-0.5">
-          <li>How to collaborate with us on defining your requirements</li>
-          <li>How we suggest initial candidate matches based on your needs</li>
-          <li>How your feedback improves future recommendations</li>
-          <li>How to communicate via text or use voice mode to discuss the details more naturally</li>
-          <li>How and when a matcher can step in for additional support</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
     id: "5",
     type: "ai-text",
     content: (
