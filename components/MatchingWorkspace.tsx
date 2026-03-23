@@ -132,6 +132,7 @@ function WorkspaceInner() {
     "Yes, let's use the voice mode",
     "Yes, let's chat",
   ]);
+  const [pinnedInteraction, setPinnedInteraction] = useState<{ options: string[]; action: string } | null>(null);
   const [conversationStage, setConversationStage] = useState<ConversationStage>("intro");
   const threadRef = useRef<HTMLDivElement>(null);
   const isInitialMount = useRef(true);
@@ -206,15 +207,16 @@ function WorkspaceInner() {
     }, 700);
   }
 
-  // Inline thread interaction-options
-  function handleThreadOption(msgId: string, option: string, action: string) {
-    // Remove the pills message, post user reply
-    setMessages((prev) => [
-      ...prev.filter((m) => m.id !== msgId),
-      { id: uid(), type: "user-text", content: option },
-    ]);
+  // Handle a pinned (above-input) interaction option
+  function handlePinnedInteraction(option: string, action: string) {
+    setPinnedInteraction(null);
+    setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: option }]);
     setIsLoading(true);
+    runInteractionAction(option, action);
+  }
 
+  // Shared action logic (used by both pinned and legacy thread options)
+  function runInteractionAction(option: string, action: string) {
     if (action === "jd-confirm") {
       if (option === "Yes, looks good") {
         setActivePhase(3); // advance to Matching Candidates
@@ -296,15 +298,7 @@ function WorkspaceInner() {
         {
           delay: 600,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "interaction-options",
-                options: ["Yes, let's refine", "No, these are fine"],
-                action: "refine-confirm",
-              },
-            ]);
+            setPinnedInteraction({ options: ["Yes, let's refine", "No, these are fine"], action: "refine-confirm" });
             setIsLoading(false);
           },
         },
@@ -378,15 +372,7 @@ function WorkspaceInner() {
         {
           delay: 300,
           fn: () => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: uid(),
-                type: "interaction-options",
-                options: ["Yes, looks good", "I'd like to adjust this"],
-                action: "jd-confirm",
-              },
-            ]);
+            setPinnedInteraction({ options: ["Yes, looks good", "I'd like to adjust this"], action: "jd-confirm" });
             setIsLoading(false);
             setConversationStage("open");
           },
@@ -437,15 +423,7 @@ function WorkspaceInner() {
       {
         delay: 300,
         fn: () => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: uid(),
-              type: "interaction-options",
-              options: ["Yes, looks good", "I'd like to adjust this"],
-              action: "jd-confirm",
-            },
-          ]);
+          setPinnedInteraction({ options: ["Yes, looks good", "I'd like to adjust this"], action: "jd-confirm" });
           setIsLoading(false);
           setConversationStage("open");
         },
@@ -520,7 +498,7 @@ function WorkspaceInner() {
             {msg.options.map((opt) => (
               <button
                 key={opt}
-                onClick={() => handleThreadOption(msg.id, opt, msg.action)}
+                onClick={() => handlePinnedInteraction(opt, msg.action)}
                 className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
                 style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
               >
@@ -599,18 +577,29 @@ function WorkspaceInner() {
                 background: "linear-gradient(to bottom, rgba(255,255,255,0) 0%, #fff 24%)",
               }}
             >
-              {activeOptions && (
-                <div className="flex gap-2">
-                  {activeOptions.map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => handleOptionSelect(opt)}
-                      className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
-                      style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
-                    >
-                      {opt}
-                    </button>
-                  ))}
+              {(activeOptions || pinnedInteraction) && (
+                <div className="flex gap-2 flex-wrap">
+                  {activeOptions
+                    ? activeOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => handleOptionSelect(opt)}
+                          className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
+                          style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
+                        >
+                          {opt}
+                        </button>
+                      ))
+                    : pinnedInteraction!.options.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => handlePinnedInteraction(opt, pinnedInteraction!.action)}
+                          className="rounded-full text-[13px] font-semibold leading-[20px] px-4 py-2 cursor-pointer"
+                          style={{ border: "1px solid #204ECF", color: "#204ECF", background: "transparent" }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
                 </div>
               )}
               <ChatInput onSend={handleSend} isLoading={isLoading} onStop={cancelAll} />
