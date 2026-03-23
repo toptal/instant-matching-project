@@ -5,9 +5,10 @@ import { useState } from "react";
 interface ChatInputProps {
   onSend: (text: string) => void;
   isLoading?: boolean;
+  onStop?: () => void;
 }
 
-export default function ChatInput({ onSend, isLoading = false }: ChatInputProps) {
+export default function ChatInput({ onSend, isLoading = false, onStop }: ChatInputProps) {
   const [value, setValue] = useState("");
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -35,21 +36,34 @@ export default function ChatInput({ onSend, isLoading = false }: ChatInputProps)
         style={{ color: "#455065", lineHeight: "22px" }}
       />
       <div className="flex items-center gap-2">
-        {/* Voice mode button */}
-        <button
-          className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold text-white"
-          style={{ background: "#204ECF" }}
-        >
-          {/* Waveform icon */}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="1" y="5" width="2" height="6" rx="1" fill="white" />
-            <rect x="4" y="3" width="2" height="10" rx="1" fill="white" />
-            <rect x="7" y="1" width="2" height="14" rx="1" fill="white" />
-            <rect x="10" y="3" width="2" height="10" rx="1" fill="white" />
-            <rect x="13" y="5" width="2" height="6" rx="1" fill="white" />
-          </svg>
-          Use voice mode
-        </button>
+        {isLoading ? (
+          <button
+            onClick={onStop}
+            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold"
+            style={{ background: "#455065", color: "white" }}
+          >
+            {/* square stop icon */}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="1" y="1" width="10" height="10" rx="2" fill="white" />
+            </svg>
+            Stop
+          </button>
+        ) : (
+          <button
+            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold text-white"
+            style={{ background: "#204ECF" }}
+          >
+            {/* Waveform icon */}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="5" width="2" height="6" rx="1" fill="white" />
+              <rect x="4" y="3" width="2" height="10" rx="1" fill="white" />
+              <rect x="7" y="1" width="2" height="14" rx="1" fill="white" />
+              <rect x="10" y="3" width="2" height="10" rx="1" fill="white" />
+              <rect x="13" y="5" width="2" height="6" rx="1" fill="white" />
+            </svg>
+            Use voice mode
+          </button>
+        )}
         {/* Keyboard shortcut hints */}
         <span
           className="text-[11px] px-1.5 py-0.5 rounded"
