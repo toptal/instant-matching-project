@@ -119,6 +119,12 @@ function uid() {
   return `msg-${Date.now()}-${++_uidCounter}`;
 }
 
+// Must match the setTimeout delay inside TypewriterText
+const TYPEWRITER_CHAR_MS = 15;
+
+// How long the thinking dots show before a snippet card appears
+const SNIPPET_THINK_MS = 1400;
+
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealCandidates } = usePhase();
@@ -234,9 +240,11 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         const d = delay;
         const isHeading = item.style === "heading";
         schedule(() => (isHeading ? appendAIHeading(item.text) : appendAIText(item.text)), d);
+        // Hold subsequent items until this message's typewriter finishes
+        delay += item.text.length * TYPEWRITER_CHAR_MS;
       } else if (item.kind === "snippet") {
         hasContent = true;
-        delay += 200;
+        delay += SNIPPET_THINK_MS;
         const d = delay;
         const s = item.snippet;
         schedule(() => addSnippetToThread(s), d);
