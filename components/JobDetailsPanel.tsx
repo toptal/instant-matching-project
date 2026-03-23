@@ -1,7 +1,6 @@
 "use client";
 
 import { usePhase } from "@/context/PhaseContext";
-import AISnippetRequirements from "./AISnippetRequirements";
 
 interface Props {
   onBack: () => void;
@@ -14,6 +13,60 @@ function BackIcon() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M10 4L6 8l4 4" stroke="#455065" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+const initialKeyRequirements = [
+  "5+ years of backend development experience with strong proficiency in Node.js or Python.",
+  "Hands-on AWS expertise (EC2, Lambda, RDS, S3, CloudWatch).",
+  "Experience building secure, high-throughput APIs for financial or regulated industries.",
+  "Familiarity with microservices architecture and event-driven systems.",
+  "Track record of maintaining production systems with high availability requirements.",
+];
+
+const refinedKeyRequirements = [
+  "5+ years of backend development experience with strong proficiency in Node.js or Python.",
+  "Hands-on AWS expertise (EC2, Lambda, RDS, S3, CloudWatch).",
+  "Experience building secure, high-throughput APIs for financial or regulated industries.",
+  "Comfortable working closely within a cross-functional engineering team (team of 3).",
+  "US timezone availability for real-time collaboration (EST–PST overlap).",
+];
+
+const niceToHave = [
+  "Experience with fintech compliance standards (PCI-DSS, SOC 2).",
+  "Familiarity with data pipeline tooling (Kafka, Kinesis, or similar).",
+  "Background in TypeScript or Go as a secondary language.",
+];
+
+function JobDetailsContent({ variant }: { variant: "initial" | "refined" }) {
+  const aboutText =
+    variant === "refined"
+      ? "We are looking for a Senior Backend Engineer to help build and scale the infrastructure powering a fintech product. You'll work closely with a team of 3 engineers on high-throughput financial systems. AWS expertise and US timezone alignment are required for effective collaboration."
+      : "We are looking for a Senior Backend Engineer to help build and scale the infrastructure powering a fintech product. The ideal candidate brings deep AWS expertise and a track record of delivering secure, high-performance backend systems in regulated industries.";
+
+  const keyRequirements = variant === "refined" ? refinedKeyRequirements : initialKeyRequirements;
+
+  return (
+    <div className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>
+      <p className="font-semibold mb-1">Senior Backend Engineer — Fintech</p>
+
+      <p className="font-semibold mb-1 mt-4">About the job</p>
+      <p className="mb-4">{aboutText}</p>
+
+      <p className="font-semibold mb-1">Key Requirements</p>
+      <ul className="flex flex-col gap-1 mb-4">
+        {keyRequirements.map((item) => (
+          <li key={item}>• {item}</li>
+        ))}
+      </ul>
+
+      <p className="font-semibold mb-1">Nice to Have</p>
+      <ul className="flex flex-col gap-1">
+        {niceToHave.map((item) => (
+          <li key={item}>• {item}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -53,7 +106,7 @@ export default function JobDetailsPanel({ onBack }: Props) {
             </p>
           </div>
         ) : (
-          <AISnippetRequirements variant={jdVariant} versionLabel={jdVersionLabel ?? undefined} />
+          <JobDetailsContent variant={jdVariant} />
         )}
       </div>
     </div>
