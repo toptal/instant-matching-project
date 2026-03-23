@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import { usePhase } from "@/context/PhaseContext";
+import type { JdHistoryEntry } from "@/context/PhaseContext";
 
 interface Props {
   onBack: () => void;
@@ -13,6 +15,108 @@ function BackIcon() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M10 4L6 8l4 4" stroke="#455065" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function ChevronsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+      <path d="M5 6.5L8 4l3 2.5M5 9.5L8 12l3-2.5" stroke="#455065" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+      <path d="M2.5 7l3 3 6-6" stroke="#204ECF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function versionLabel(entry: JdHistoryEntry, isLatest: boolean): string {
+  return isLatest ? `Latest version (${entry.versionLabel})` : entry.versionLabel;
+}
+
+function VersionDropdown({
+  history,
+  selectedIndex,
+  onChange,
+}: {
+  history: JdHistoryEntry[];
+  selectedIndex: number;
+  onChange: (index: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const latestIndex = history.length - 1;
+  const selectedEntry = history[selectedIndex];
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 px-3 py-1 rounded text-left"
+        style={{
+          background: "white",
+          border: `1px solid ${open ? "#204ECF" : "#D8D9DC"}`,
+          boxShadow: open ? "0 0 0 2px rgba(32,78,207,0.12)" : "none",
+          transition: "border-color 0.15s, box-shadow 0.15s",
+          height: 32,
+        }}
+      >
+        <span className="flex-1 text-[14px] leading-[22px] text-black truncate">
+          {versionLabel(selectedEntry, selectedIndex === latestIndex)}
+        </span>
+        <ChevronsIcon />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg z-50 overflow-hidden"
+          style={{
+            border: "1px solid #EBECED",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+          }}
+        >
+          {/* Show latest first, then older versions */}
+          {[...history].reverse().map((entry, reversedIdx) => {
+            const originalIndex = history.length - 1 - reversedIdx;
+            const isLatest = originalIndex === latestIndex;
+            const isSelected = originalIndex === selectedIndex;
+            const isLast = reversedIdx === history.length - 1;
+            return (
+              <button
+                key={originalIndex}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                style={{
+                  borderBottom: !isLast ? "1px solid #F3F4F6" : "none",
+                }}
+                onClick={() => { onChange(originalIndex); setOpen(false); }}
+              >
+                <span
+                  className="text-[14px] leading-[22px]"
+                  style={{ color: isSelected ? "#204ECF" : "#1a1a2e", fontWeight: isSelected ? 600 : 400 }}
+                >
+                  {versionLabel(entry, isLatest)}
+                </span>
+                {isSelected && <CheckIcon />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -71,7 +175,21 @@ function JobDetailsContent({ variant }: { variant: "initial" | "refined" }) {
 }
 
 export default function JobDetailsPanel({ onBack }: Props) {
-  const { jdVariant, jdVersionLabel } = usePhase();
+  const { jdVariant, jdHistory } = usePhase();
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState<number | null>(null);
+
+  // Keep selectedVersionIndex pointing at the latest whenever a new version arrives
+  useEffect(() => {
+    if (jdHistory.length > 0) {
+      setSelectedVersionIndex(jdHistory.length - 1);
+    }
+  }, [jdHistory.length]);
+
+  const hasHistory = jdHistory.length > 0;
+  const displayEntry =
+    selectedVersionIndex !== null && hasHistory
+      ? jdHistory[selectedVersionIndex]
+      : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -81,15 +199,28 @@ export default function JobDetailsPanel({ onBack }: Props) {
           <BackIcon />
         </button>
         <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>
-          {jdVersionLabel ? `Job Details — ${jdVersionLabel}` : "Job Details"}
+          Job Details
         </span>
       </div>
 
       <Separator />
 
+      {/* Version dropdown */}
+      {hasHistory && selectedVersionIndex !== null && (
+        <div className="px-5 pt-4 shrink-0">
+          <VersionDropdown
+            history={jdHistory}
+            selectedIndex={selectedVersionIndex}
+            onChange={setSelectedVersionIndex}
+          />
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        {jdVariant === null ? (
+        {displayEntry ? (
+          <JobDetailsContent variant={displayEntry.variant} />
+        ) : jdVariant === null ? (
           <div
             className="flex flex-col items-center text-center gap-2 pt-8"
             style={{ color: "#6B7585" }}

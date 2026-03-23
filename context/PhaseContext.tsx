@@ -15,6 +15,8 @@ const PHASE_LABELS = [
 
 export type StatusHistoryEntry = { decision: Decision; timestamp: Date };
 
+export type JdHistoryEntry = { variant: "initial" | "refined"; versionLabel: string };
+
 interface PhaseContextValue {
   activePhase: number;
   phaseLabel: string;
@@ -24,6 +26,7 @@ interface PhaseContextValue {
   // Job Details — live state synced from thread snippets
   jdVariant: "initial" | "refined" | null;
   jdVersionLabel: string | null;
+  jdHistory: JdHistoryEntry[];
   jobDetailsUpdated: boolean;
   updateJobDetails: (variant: "initial" | "refined", versionLabel: string) => void;
   markJobDetailsViewed: () => void;
@@ -50,6 +53,7 @@ const PhaseContext = createContext<PhaseContextValue>({
   triggerMatcherTooltip: () => {},
   jdVariant: null,
   jdVersionLabel: null,
+  jdHistory: [],
   jobDetailsUpdated: false,
   updateJobDetails: () => {},
   markJobDetailsViewed: () => {},
@@ -69,6 +73,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
   const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
+  const [jdHistory, setJdHistory] = useState<JdHistoryEntry[]>([]);
   const [jobDetailsUpdated, setJobDetailsUpdated] = useState(false);
   const [candidatesRevealed, setCandidatesRevealed] = useState(false);
   const [candidatesNew, setCandidatesNew] = useState(false);
@@ -86,6 +91,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   function updateJobDetails(variant: "initial" | "refined", versionLabel: string) {
     setJdVariant(variant);
     setJdVersionLabel(versionLabel);
+    setJdHistory((prev) => [...prev, { variant, versionLabel }]);
     setJobDetailsUpdated(true);
   }
 
@@ -131,6 +137,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         triggerMatcherTooltip,
         jdVariant,
         jdVersionLabel,
+        jdHistory,
         jobDetailsUpdated,
         updateJobDetails,
         markJobDetailsViewed,
