@@ -20,10 +20,15 @@ interface PhaseContextValue {
   setActivePhase: (n: number) => void;
   tooltipTriggerCount: number;
   triggerMatcherTooltip: () => void;
-  // US-027: badge tracking
+  // Job Details — live state synced from thread snippets
+  jdVariant: "initial" | "refined" | null;
+  jdVersionLabel: string | null;
   jobDetailsUpdated: boolean;
-  markJobDetailsUpdated: () => void;
+  updateJobDetails: (variant: "initial" | "refined", versionLabel: string) => void;
   markJobDetailsViewed: () => void;
+  // Candidates — hidden until revealed in thread
+  candidatesRevealed: boolean;
+  revealCandidates: () => void;
   // US-027 + US-039: shared candidate decisions
   candidateDecisions: Decision[];
   setCandidateDecision: (index: number, decision: Decision) => void;
@@ -38,9 +43,13 @@ const PhaseContext = createContext<PhaseContextValue>({
   setActivePhase: () => {},
   tooltipTriggerCount: 0,
   triggerMatcherTooltip: () => {},
+  jdVariant: null,
+  jdVersionLabel: null,
   jobDetailsUpdated: false,
-  markJobDetailsUpdated: () => {},
+  updateJobDetails: () => {},
   markJobDetailsViewed: () => {},
+  candidatesRevealed: false,
+  revealCandidates: () => {},
   candidateDecisions: [null, null, null],
   setCandidateDecision: () => {},
   interestedCount: 0,
@@ -50,7 +59,10 @@ const PhaseContext = createContext<PhaseContextValue>({
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
   const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
+  const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
+  const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jobDetailsUpdated, setJobDetailsUpdated] = useState(false);
+  const [candidatesRevealed, setCandidatesRevealed] = useState(false);
   const [candidateDecisions, setCandidateDecisions] = useState<Decision[]>([null, null, null]);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[][]>([[], [], []]);
 
@@ -58,12 +70,18 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
     setTooltipTriggerCount((n) => n + 1);
   }
 
-  function markJobDetailsUpdated() {
+  function updateJobDetails(variant: "initial" | "refined", versionLabel: string) {
+    setJdVariant(variant);
+    setJdVersionLabel(versionLabel);
     setJobDetailsUpdated(true);
   }
 
   function markJobDetailsViewed() {
     setJobDetailsUpdated(false);
+  }
+
+  function revealCandidates() {
+    setCandidatesRevealed(true);
   }
 
   function setCandidateDecision(index: number, decision: Decision) {
@@ -89,9 +107,13 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         setActivePhase,
         tooltipTriggerCount,
         triggerMatcherTooltip,
+        jdVariant,
+        jdVersionLabel,
         jobDetailsUpdated,
-        markJobDetailsUpdated,
+        updateJobDetails,
         markJobDetailsViewed,
+        candidatesRevealed,
+        revealCandidates,
         candidateDecisions,
         setCandidateDecision,
         interestedCount,

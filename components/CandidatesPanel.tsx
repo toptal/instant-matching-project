@@ -16,7 +16,7 @@ function BackIcon() {
 }
 
 export default function CandidatesPanel({ onBack }: Props) {
-  const { candidateDecisions, interestedCount } = usePhase();
+  const { candidateDecisions, interestedCount, candidatesRevealed } = usePhase();
 
   return (
     <div className="flex flex-col h-full">
@@ -39,9 +39,25 @@ export default function CandidatesPanel({ onBack }: Props) {
 
       <Separator />
 
-      {/* Candidate list */}
+      {/* Candidate list — empty until revealed in thread */}
       <div className="flex-1 overflow-y-auto">
-        {CANDIDATES.map((c, i) => {
+        {!candidatesRevealed ? (
+          <div
+            className="flex flex-col items-center justify-center h-full text-center gap-2 px-5"
+            style={{ color: "#9EA8B3" }}
+          >
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="12" cy="10" r="4" stroke="#D8D9DC" strokeWidth="1.5" />
+              <circle cx="22" cy="10" r="4" stroke="#D8D9DC" strokeWidth="1.5" />
+              <path d="M4 26c0-4 3.6-7 8-7s8 3 8 7" stroke="#D8D9DC" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M22 19c2.8.5 5 2.8 5 7" stroke="#D8D9DC" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <p className="text-[13px] leading-[20px]">No candidates yet.</p>
+            <p className="text-[12px] leading-[18px]" style={{ color: "#C4C9D0" }}>
+              Complete the requirements step to see matched candidates.
+            </p>
+          </div>
+        ) : CANDIDATES.map((c, i) => {
           const decision = candidateDecisions[i];
           return (
             <div key={c.name}>
