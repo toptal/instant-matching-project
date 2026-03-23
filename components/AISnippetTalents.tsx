@@ -71,19 +71,21 @@ export default function AISnippetTalents({ onPass }: Props) {
 
   return (
     <>
-      <div className="relative w-full" style={{ height: 395 }}>
-        {/* Ghost cards */}
+      <div className="relative w-full">
+        {/* Ghost cards — absolutely positioned, extend 8px per step below the front card */}
         {stackCards.slice(0, -1).map((idx, pos) => {
-          const isMiddle = pos === stackCards.length - 2;
+          const ghostCards = stackCards.slice(0, -1);
+          const step = 8;
+          const stepsBack = ghostCards.length - pos;
           return (
             <div
               key={idx}
               className="absolute rounded-sm"
               style={{
-                left: isMiddle ? 33 : 61,
-                top: isMiddle ? 53 : 99,
-                width: isMiddle ? "calc(100% - 66px)" : "calc(100% - 122px)",
-                height: isMiddle ? 296 : 265,
+                top: 0,
+                left: stepsBack * 16,
+                right: stepsBack * 16,
+                bottom: -stepsBack * step,
                 border: "1px solid #EBECED",
                 boxShadow: "0 0 8px rgba(0,0,0,0.08)",
                 background: "white",
@@ -96,9 +98,8 @@ export default function AISnippetTalents({ onPass }: Props) {
         {/* Front card */}
         {frontIndex < CANDIDATES.length && (
           <div
-            className="absolute flex gap-6 rounded-sm"
+            className="relative flex gap-6 rounded-sm"
             style={{
-              left: 0, top: 0, width: "100%",
               border: `1.5px solid ${decision === "interested" ? "#03B080" : "#EBECED"}`,
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
               background: "white",
@@ -183,7 +184,7 @@ export default function AISnippetTalents({ onPass }: Props) {
         )}
 
         {allDecided && (
-          <p className="absolute text-[13px] text-center w-full" style={{ top: 375, color: "#455065" }}>
+          <p className="text-[13px] text-center w-full mt-3" style={{ color: "#455065" }}>
             All candidates reviewed. Your feedback has been sent.
           </p>
         )}
