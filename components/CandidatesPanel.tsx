@@ -129,7 +129,7 @@ function DecisionBadge({ decision }: { decision: Decision }) {
 }
 
 export default function CandidatesPanel({ onBack }: Props) {
-  const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates } = usePhase();
+  const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates, matcherRevealedIds } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
@@ -215,14 +215,24 @@ export default function CandidatesPanel({ onBack }: Props) {
                       />
                     )}
 
-                    {/* Name + role */}
-                    <div>
+                    {/* Name + role + source badge */}
+                    <div className="flex flex-col gap-1">
                       <p className="text-[13px] font-semibold leading-[20px] text-black truncate">
                         {c.name}
                       </p>
                       <p className="text-[12px] leading-[18px] truncate" style={{ color: "#455065" }}>
                         {c.role}
                       </p>
+                      <span
+                        className="self-start px-2 py-0.5 rounded text-[12px] font-semibold leading-[18px]"
+                        style={
+                          matcherRevealedIds.includes(c.id)
+                            ? { border: "1px solid #03B080", color: "#03B080" }
+                            : { border: "1px solid #6727CF", color: "#6727CF" }
+                        }
+                      >
+                        {matcherRevealedIds.includes(c.id) ? "Matcher pick" : "Auto-matched"}
+                      </span>
                     </div>
                   </button>
                 );

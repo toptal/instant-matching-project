@@ -157,7 +157,7 @@ export const CANDIDATES: Candidate[] = [
     name: "Emma Walsh",
     photo: "/photos/woman3.png",
     role: "Backend Developer",
-    badge: "Auto-matched",
+    badge: "Matcher pick",
     source: "matcher",
     matcherName: "Steven",
     reasons: [
