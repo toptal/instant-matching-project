@@ -238,6 +238,20 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
     const afterText = delay + step.matcherText.length * TYPEWRITER_CHAR_MS + 400;
 
+    let snippetDelay = afterText;
+
+    if (step.requirementSnippet) {
+      schedule(() => {
+        const { variant, versionLabel } = requirementVariant(step.requirementSnippet!);
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), type: "snippet-requirements", variant, versionLabel },
+        ]);
+        updateJobDetails(variant, versionLabel);
+      }, snippetDelay + SNIPPET_THINK_MS);
+      snippetDelay += SNIPPET_THINK_MS + 400;
+    }
+
     if (step.talentsSnippet) {
       schedule(() => {
         const batch = revealNextBatch(3, true);
@@ -245,17 +259,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
           ...prev,
           { id: uid(), type: "snippet-talents", candidates: batch, matcherPick: true },
         ]);
-      }, afterText + SNIPPET_THINK_MS);
-      schedule(() => {
-        setIsLoading(false);
-        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
-      }, afterText + SNIPPET_THINK_MS + 400);
-    } else {
-      schedule(() => {
-        setIsLoading(false);
-        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
-      }, afterText);
+      }, snippetDelay + SNIPPET_THINK_MS);
+      snippetDelay += SNIPPET_THINK_MS + 400;
     }
+
+    schedule(() => {
+      setIsLoading(false);
+      if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
+    }, snippetDelay);
   }
 
   // Advance the matcher scenario (called when user sends a message while matcher is active)
