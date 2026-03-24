@@ -1,4 +1,4 @@
-export default function MatcherCard() {
+export default function MatcherCard({ onChatClick }: { onChatClick?: () => void }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="relative overflow-hidden" style={{ height: 160 }}>
@@ -45,6 +45,7 @@ export default function MatcherCard() {
           Call
         </button>
         <button
+          onClick={onChatClick}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold bg-white"
           style={{ border: "1.5px solid #EBECED", color: "#455065" }}
         >

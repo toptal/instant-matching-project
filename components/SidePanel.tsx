@@ -15,7 +15,7 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew } = usePhase();
+  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive, activateMatcherChat } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -87,7 +87,7 @@ export default function SidePanel() {
             </div>
             <Separator />
             <div className="p-5 shrink-0">
-              <MatcherCard />
+              <MatcherCard onChatClick={matcherChatActive ? undefined : activateMatcherChat} />
             </div>
             <Separator />
             <div className="flex flex-col">
