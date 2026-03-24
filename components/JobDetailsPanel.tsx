@@ -195,7 +195,7 @@ export default function JobDetailsPanel({ onBack }: Props) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 shrink-0">
-        <button onClick={onBack} className="flex items-center justify-center">
+        <button onClick={onBack} className="flex items-center justify-center cursor-pointer">
           <BackIcon />
         </button>
         <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>

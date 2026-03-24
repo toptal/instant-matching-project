@@ -181,7 +181,7 @@ export default function CandidatesPanel({ onBack }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="flex items-center justify-center">
+          <button onClick={onBack} className="flex items-center justify-center cursor-pointer">
             <BackIcon />
           </button>
           <span className="text-[14px] font-semibold" style={{ color: "#455065" }}>
@@ -311,7 +311,10 @@ export default function CandidatesPanel({ onBack }: Props) {
       {/* Individual candidate modal */}
       {modalIndex !== null && filtered.length > 0 && createPortal(
         <CandidateModal
-          candidates={filtered}
+          candidates={filtered.map(c => ({
+            ...c,
+            badge: matcherRevealedIds.includes(c.id) ? "Matcher pick" : "Auto-matched",
+          }))}
           currentIndex={modalIndex}
           decisions={filtered.map((c) => candidateDecisions[c.id] ?? null)}
           onClose={() => setModalIndex(null)}

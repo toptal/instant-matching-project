@@ -36,7 +36,7 @@ interface Props {
 }
 
 export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass }: Props) {
-  const { candidateDecisions, setCandidateDecision, revealedCandidates } = usePhase();
+  const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds } = usePhase();
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
 
@@ -175,7 +175,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
               </div>
               {decision ? (
                 <button
-                  className="w-full py-2 rounded text-[13px] font-semibold"
+                  className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
                   style={{ border: "1px solid #EBECED", color: "#455065", background: "white" }}
                   onClick={() => setModalIndex(displayIndex)}
                 >
@@ -183,7 +183,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                 </button>
               ) : (
                 <button
-                  className="w-full py-2 rounded text-[13px] font-semibold text-white"
+                  className="w-full py-2 rounded text-[13px] font-semibold text-white cursor-pointer"
                   style={{ background: "#204ECF" }}
                   onClick={() => setModalIndex(displayIndex)}
                 >
@@ -242,7 +242,10 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
       {/* Modal */}
       {modalIndex !== null && (
         <CandidateModal
-          candidates={candidates}
+          candidates={candidates.map(c => ({
+            ...c,
+            badge: matcherRevealedIds.includes(c.id) ? "Matcher pick" : "Auto-matched",
+          }))}
           currentIndex={modalIndex}
           decisions={batchDecisions}
           onClose={() => setModalIndex(null)}

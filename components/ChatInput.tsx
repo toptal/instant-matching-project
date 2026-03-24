@@ -75,7 +75,7 @@ export default function ChatInput({
             {isLoading ? (
               <button
                 onClick={onStop}
-                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold"
+                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-semibold cursor-pointer"
                 style={{ background: "#455065", color: "white" }}
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -85,7 +85,7 @@ export default function ChatInput({
               </button>
             ) : (
               <button
-                className="flex items-center gap-2 rounded-full pr-3"
+                className="flex items-center gap-2 rounded-full pr-3 cursor-pointer"
                 style={{ background: "#eafbf5" }}
               >
                 <div
@@ -159,7 +159,7 @@ export default function ChatInput({
           </button>
         ) : (
           <button
-            className="flex items-center gap-2 rounded-full pr-3"
+            className="flex items-center gap-2 rounded-full pr-3 cursor-pointer"
             style={{ background: "#edf1fd" }}
           >
             {/* Icon circle */}
