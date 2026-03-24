@@ -334,6 +334,13 @@ export default function CandidatesPanel({ onBack }: Props) {
             matcherRevealedIds={matcherRevealedIds}
             onClose={() => setCompareOpen(false)}
             onDecide={(id, decision) => setCandidateDecision(id, decision)}
+            onRemove={(id) => {
+              setSelectedIds((prev) => {
+                const next = prev.filter((sid) => sid !== id);
+                if (next.length < 2) setCompareOpen(false);
+                return next;
+              });
+            }}
           />,
           document.body
         );
