@@ -153,7 +153,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
             {/* Left — white box */}
             <div
-              className="flex flex-col gap-3 shrink-0"
+              className="flex flex-col gap-3 shrink-0 self-start"
               style={{ background: "white", padding: 16, width: 182 }}
             >
               {/* Photo */}
