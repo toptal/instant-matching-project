@@ -99,7 +99,7 @@ export default function SidePanel() {
               <Separator />
               <NavRow
                 label={`Candidates (${revealedCandidates.length})`}
-                badge={candidatesNew ? `New: ${revealedCandidates.length}` : undefined}
+                badge={candidatesNew ? "New Talent" : undefined}
                 onClick={() => { markCandidatesViewed(); setActivePanel("candidates"); }}
               />
               <Separator />
