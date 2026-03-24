@@ -6,9 +6,10 @@ import { usePhase } from "@/context/PhaseContext";
 import type { Decision } from "@/data/candidates";
 import CandidateModal from "./CandidateModal";
 
-type FilterOption = "interested-not-reviewed" | "not-a-fit";
+type FilterOption = "all" | "interested-not-reviewed" | "not-a-fit";
 
 const FILTER_LABELS: Record<FilterOption, string> = {
+  "all": "All candidates",
   "interested-not-reviewed": "Interested or Not Reviewed",
   "not-a-fit": "Not a fit",
 };
@@ -88,7 +89,7 @@ function FilterDropdown({ value, onChange }: { value: FilterOption; onChange: (v
               key={opt}
               className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
               style={{
-                borderBottom: opt !== "not-a-fit" ? "1px solid #F3F4F6" : "none",
+                borderBottom: opt !== "not-a-fit" ? "1px solid #F3F4F6" : undefined,
               }}
               onClick={() => { onChange(opt); setOpen(false); }}
             >
@@ -134,6 +135,7 @@ export default function CandidatesPanel({ onBack }: Props) {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const filtered = revealedCandidates.filter((c) => {
+    if (filter === "all") return true;
     const d = candidateDecisions[c.id] ?? null;
     if (filter === "interested-not-reviewed") return d === "interested" || d === null;
     return d === "not-a-fit";
