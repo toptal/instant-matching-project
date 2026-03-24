@@ -155,6 +155,204 @@ function SelectionCheckbox({ selected }: { selected: boolean }) {
   );
 }
 
+function InfoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+      <circle cx="8" cy="8" r="6.5" stroke="#84888e" strokeWidth="1.2" />
+      <rect x="7.3" y="7" width="1.4" height="4.5" rx="0.7" fill="#84888e" />
+      <circle cx="8" cy="4.75" r="0.85" fill="#84888e" />
+    </svg>
+  );
+}
+
+function AvailabilityRow() {
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className="text-[12px] leading-[18px]"
+        style={{ color: "#84888e" }}
+      >
+        Confirming Availability...
+      </span>
+      <div
+        className="relative flex items-center cursor-default"
+        onMouseEnter={() => setTooltipVisible(true)}
+        onMouseLeave={() => setTooltipVisible(false)}
+      >
+        <InfoIcon />
+        {tooltipVisible && (
+          <div
+            className="absolute bottom-full left-1/2 mb-2 px-2.5 py-1.5 rounded text-[11px] leading-[16px] text-white whitespace-nowrap z-50"
+            style={{
+              background: "#1a1a2e",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+              transform: "translateX(-50%)",
+            }}
+          >
+            We&apos;re confirming this talent&apos;s availability
+            <div
+              className="absolute top-full left-1/2 -translate-x-1/2"
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "5px solid transparent",
+                borderRight: "5px solid transparent",
+                borderTop: "5px solid #1a1a2e",
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface CandidateCardProps {
+  candidate: { id: string; name: string; photo?: string; role: string };
+  decision: Decision;
+  isSelected: boolean;
+  isMatcher: boolean;
+  onOpenModal: () => void;
+  onToggleSelect: (e: React.MouseEvent) => void;
+}
+
+function CandidateCard({
+  candidate,
+  decision,
+  isSelected,
+  isMatcher,
+  onOpenModal,
+  onToggleSelect,
+}: CandidateCardProps) {
+  return (
+    <div
+      className="relative flex flex-col gap-3 p-4 rounded-lg cursor-pointer"
+      style={{
+        background: isSelected ? "#EEF2FC" : "#F3F4F6",
+        outline: isSelected ? "2px solid #204ECF" : "none",
+        outlineOffset: -2,
+      }}
+      onClick={onOpenModal}
+    >
+      <DecisionBadge decision={decision} />
+
+      {/* Selection checkbox */}
+      <div
+        className="absolute top-2 right-2 z-10"
+        onClick={onToggleSelect}
+      >
+        <SelectionCheckbox selected={isSelected} />
+      </div>
+
+      {/* Top row: photo + info */}
+      <div className="flex gap-3 items-start">
+        {/* Photo */}
+        <div
+          className="shrink-0 rounded overflow-hidden"
+          style={{ width: 120, height: 120 }}
+        >
+          {candidate.photo ? (
+            <img
+              src={candidate.photo}
+              alt={candidate.name}
+              className="w-full h-full object-cover object-top"
+            />
+          ) : (
+            <div
+              className="w-full h-full"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+              }}
+            />
+          )}
+        </div>
+
+        {/* Name / role / badge / availability */}
+        <div className="flex flex-col gap-1 pt-0.5 min-w-0 min-h-[120px]">
+          <p className="text-[14px] font-semibold leading-[22px] text-black truncate pr-6">
+            {candidate.name}
+          </p>
+          <p
+            className="text-[13px] leading-[20px] truncate"
+            style={{ color: "#455065" }}
+          >
+            {candidate.role}
+          </p>
+          <span
+            className="self-start px-2 py-0.5 rounded text-[12px] font-semibold leading-[18px] whitespace-nowrap"
+            style={
+              isMatcher
+                ? { border: "1px solid #03B080", color: "#03B080" }
+                : { border: "1px solid #6727CF", color: "#6727CF" }
+            }
+          >
+            {isMatcher ? "Matcher pick" : "Auto-matched"}
+          </span>
+          {decision === "interested" && (
+            <div className="mt-auto">
+              <AvailabilityRow />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div
+        className="flex gap-3 items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {decision === "not-a-fit" ? (
+          <button
+            className="flex-1 flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] text-black cursor-pointer whitespace-nowrap"
+            style={{
+              background: "white",
+              border: "1px solid #D8D9DC",
+            }}
+            onClick={onOpenModal}
+          >
+            More Details
+          </button>
+        ) : decision === "interested" ? (
+          <>
+            <button
+              className="flex-1 flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] text-black cursor-pointer whitespace-nowrap"
+              style={{
+                background: "white",
+                border: "1px solid #D8D9DC",
+              }}
+              onClick={onOpenModal}
+            >
+              More Details
+            </button>
+            <button
+              disabled
+              className="flex-1 flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] whitespace-nowrap"
+              style={{
+                background: "#F3F4F6",
+                border: "1px solid #D8D9DC",
+                color: "#9EA8B3",
+                cursor: "default",
+              }}
+            >
+              Schedule Interview
+            </button>
+          </>
+        ) : (
+          <button
+            className="flex-1 flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] text-white cursor-pointer whitespace-nowrap"
+            style={{ background: "#204ECF" }}
+            onClick={onOpenModal}
+          >
+            Review
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CandidatesPanel({ onBack }: Props) {
   const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates, matcherRevealedIds } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
@@ -226,11 +424,11 @@ export default function CandidatesPanel({ onBack }: Props) {
           {/* Filter dropdown */}
           <FilterDropdown value={filter} onChange={setFilter} />
 
-          {/* 2-column card grid */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          {/* Card list */}
+          <div className="mt-4 flex flex-col gap-2">
             {filtered.length === 0 ? (
               <p
-                className="col-span-2 text-center text-[13px] leading-[20px] py-6"
+                className="text-center text-[13px] leading-[20px] py-6"
                 style={{ color: "#8A94A6" }}
               >
                 No candidates match this filter.
@@ -240,67 +438,15 @@ export default function CandidatesPanel({ onBack }: Props) {
                 const decision = candidateDecisions[c.id] ?? null;
                 const isSelected = selectedIds.includes(c.id);
                 return (
-                  <button
+                  <CandidateCard
                     key={c.id}
-                    className="relative flex flex-col gap-3 p-3 rounded-lg text-left w-full"
-                    style={{
-                      background: isSelected ? "#EEF2FC" : "#F3F4F6",
-                      cursor: "pointer",
-                      outline: isSelected ? "2px solid #204ECF" : "none",
-                      outlineOffset: -2,
-                    }}
-                    onClick={() => setModalIndex(i)}
-                  >
-                    {/* Decision badge — left-edge pill */}
-                    <DecisionBadge decision={decision} />
-
-                    {/* Selection checkbox — top-right corner */}
-                    <div
-                      className="absolute top-2 right-2 z-10"
-                      onClick={(e) => toggleSelect(c.id, e)}
-                    >
-                      <SelectionCheckbox selected={isSelected} />
-                    </div>
-
-                    {/* Photo */}
-                    {c.photo ? (
-                      <img
-                        src={c.photo}
-                        alt={c.name}
-                        className="w-full rounded object-cover object-top"
-                        style={{ aspectRatio: "1" }}
-                      />
-                    ) : (
-                      <div
-                        className="w-full rounded"
-                        style={{
-                          aspectRatio: "1",
-                          background:
-                            "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
-                        }}
-                      />
-                    )}
-
-                    {/* Name + role + source badge */}
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[13px] font-semibold leading-[20px] text-black truncate">
-                        {c.name}
-                      </p>
-                      <p className="text-[12px] leading-[18px] truncate" style={{ color: "#455065" }}>
-                        {c.role}
-                      </p>
-                      <span
-                        className="self-start px-2 py-0.5 rounded text-[12px] font-semibold leading-[18px]"
-                        style={
-                          matcherRevealedIds.includes(c.id)
-                            ? { border: "1px solid #03B080", color: "#03B080" }
-                            : { border: "1px solid #6727CF", color: "#6727CF" }
-                        }
-                      >
-                        {matcherRevealedIds.includes(c.id) ? "Matcher pick" : "Auto-matched"}
-                      </span>
-                    </div>
-                  </button>
+                    candidate={c}
+                    decision={decision}
+                    isSelected={isSelected}
+                    isMatcher={matcherRevealedIds.includes(c.id)}
+                    onOpenModal={() => setModalIndex(i)}
+                    onToggleSelect={(e) => toggleSelect(c.id, e)}
+                  />
                 );
               })
             )}
