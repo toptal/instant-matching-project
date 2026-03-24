@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Decision = "interested" | "not-a-fit" | null;
 
@@ -43,6 +43,11 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
   const c = candidates[currentIndex];
   const decision = decisions[currentIndex];
   const [showReasons, setShowReasons] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [currentIndex]);
 
   function handleNotAFit() {
     if (decision === "not-a-fit") return;
@@ -79,12 +84,13 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
           </svg>
         </button>
 
-        {/* Scrollable zone — header + body scroll together as one unit */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Scrollable zone — position:relative so the card can be absolute inside */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 relative">
 
-          {/* Dark navy header */}
-          <div className="relative flex gap-8" style={{ background: "#1B2D72", padding: "32px 32px 24px 32px" }}>
-            <div className="flex flex-col gap-4 flex-1 min-w-0">
+          {/* Dark navy header — right padding reserves space for the floating card */}
+          <div style={{ background: "#1B2D72", padding: "32px 330px 24px 32px" }}>
+            <div className="flex flex-col gap-4" style={{ paddingTop: 8 }}>
+              {/* Name + badge */}
               <div className="flex items-center gap-3">
                 <h2 className="text-white font-bold text-[22px] leading-[28px]">{c.name}</h2>
                 <div
@@ -95,8 +101,12 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
                 </div>
               </div>
 
+              {/* Separator */}
+              <div style={{ width: 64, height: 1, background: "rgba(255,255,255,0.3)" }} />
+
+              {/* Reasons */}
               <div className="flex flex-col gap-2">
-                <p className="text-[12px] leading-[18px]" style={{ color: "rgba(255,255,255,0.6)" }}>
+                <p className="text-[14px] leading-[22px] text-white">
                   Why this might be a fit:
                 </p>
                 {c.reasons.map((r, i) => (
@@ -104,65 +114,86 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                       <path d="M3 8h10M9 4l4 4-4 4" stroke="#03B080" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    <span className="text-[14px] leading-[22px] text-white">
+                    <span className="text-[16px] leading-[24px] text-white">
                       {r.full ? r.full : <>{r.pre}<span className="font-semibold">{r.bold}</span>{r.post}</>}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* Separator */}
+              <div style={{ width: 64, height: 1, background: "rgba(255,255,255,0.3)" }} />
+
+              {/* Skills */}
               <div className="flex gap-2 flex-wrap">
                 {c.skills.map((s) => (
-                  <div key={s} className="px-3 py-1 rounded-xl text-[12px] font-semibold leading-[18px]" style={{ border: "1px solid #03B080", color: "#03B080" }}>
+                  <div key={s} className="px-3 py-1.5 rounded-xl text-[12px] font-semibold leading-[12px]" style={{ border: "1px solid #03B080", color: "#03B080" }}>
                     {s}
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 text-[13px] leading-[20px]" style={{ color: "rgba(255,255,255,0.6)" }}>
-                <span>Can start: {c.canStart}</span>
-                <span>•</span>
-                <span>Availability: {c.availability}</span>
-                <span>•</span>
-                <span>{c.localTime}</span>
-              </div>
-            </div>
+              {/* Separator */}
+              <div style={{ width: 64, height: 1, background: "rgba(255,255,255,0.3)" }} />
 
-            {/* Photo card */}
-            <div className="relative shrink-0 bg-white rounded-xl overflow-hidden flex flex-col" style={{ width: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.15)", alignSelf: "flex-start" }}>
-              {/* Decision badge on photo card */}
-              {decision && (
-                <div
-                  className="absolute flex items-center px-3 text-[12px] font-semibold leading-[18px] text-white z-10"
-                  style={{
-                    top: 10,
-                    left: 0,
-                    paddingTop: 2,
-                    paddingBottom: 2,
-                    background: decision === "interested" ? "#03B080" : "#E53935",
-                    borderRadius: "0 20px 20px 0",
-                    boxShadow: "0 0 8px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  {decision === "interested" ? "Interested" : "Not a fit"}
-                </div>
-              )}
-              <div className="w-full" style={{ height: 160, background: "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)" }} />
-              <div className="p-3 flex flex-col gap-1">
-                <p className="font-semibold text-[14px] leading-[20px] text-black">{c.name}</p>
-                <p className="text-[12px] leading-[18px]" style={{ color: "#455065" }}>{c.role}</p>
-                {c.experience[0] && (
-                  <>
-                    <p className="text-[10px] font-semibold tracking-widest mt-1" style={{ color: "#8A9099", textTransform: "uppercase" }}>Previously at</p>
-                    <p className="text-[13px] font-semibold" style={{ color: "#455065" }}>{c.experience[0].company}</p>
-                  </>
-                )}
+              {/* Availability */}
+              <div className="flex items-center gap-2 text-[13px] leading-[20px] text-white">
+                <span>Can start: {c.canStart}</span>
+                <span style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.5)", display: "inline-block" }} />
+                <span>Availability: {c.availability.replace(/\s*\(.*\)/, "")}</span>
+                <span style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.5)", display: "inline-block" }} />
+                <span>{c.localTime}</span>
               </div>
             </div>
           </div>
 
-          {/* White body — About + Experience */}
-          <div className="px-8 py-6 flex flex-col gap-6">
+          {/* Photo card — absolutely positioned, straddles the blue/white boundary */}
+          <div
+            className="absolute flex flex-col gap-3 p-4 bg-white"
+            style={{ top: 44, right: 32, width: 282, boxShadow: "0px 4px 8px 0px rgba(0,0,0,0.08)" }}
+          >
+            {/* Decision badge — bleeds past the left edge of the card */}
+            {decision && (
+              <div
+                className="absolute flex items-center px-4 text-[12px] font-semibold leading-[18px] text-white z-10"
+                style={{
+                  top: 10,
+                  left: -0.5,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  background: decision === "interested" ? "#03B080" : "#E53935",
+                  borderRadius: "0 20px 20px 0",
+                  boxShadow: "0 0 8px rgba(0,0,0,0.08)",
+                }}
+              >
+                {decision === "interested" ? "Interested" : "Not a fit"}
+              </div>
+            )}
+            {/* Photo — 250×250, sits inside 16 px padding */}
+            <div
+              className="w-full shrink-0"
+              style={{
+                height: 250,
+                background: "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+              }}
+            />
+            {/* Info */}
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col">
+                <p className="font-semibold text-[20px] leading-[30px] text-black">{c.name}</p>
+                <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>{c.role}</p>
+              </div>
+              {c.experience[0] && (
+                <div className="flex flex-col gap-0.5 mt-1">
+                  <p className="text-[12px] font-semibold leading-[12px]" style={{ color: "#84888E", letterSpacing: "0.06em" }}>PREVIOUSLY AT</p>
+                  <p className="text-[14px] font-semibold leading-[22px]" style={{ color: "#455065" }}>{c.experience[0].company}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* White body — paddingTop accounts for the photo card overlapping from above */}
+          <div className="px-8 flex flex-col gap-6" style={{ paddingTop: 85, paddingBottom: 24 }}>
             <div>
               <h3 className="font-bold text-[18px] leading-[26px] text-black mb-3">About</h3>
               <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>{c.about}</p>
