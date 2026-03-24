@@ -32,7 +32,7 @@ type Message =
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-steps" }
   | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
-  | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string }
+  | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string; matcherTriggered?: boolean }
   | { id: string; type: "interaction-options"; options: string[]; action: string }
   | { id: string; type: "matcher-joined" }
   | { id: string; type: "matcher-text"; content: string };
@@ -257,7 +257,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         const batch = revealNextBatch(3);
         setMessages((prev) => [
           ...prev,
-          { id: uid(), type: "snippet-talents", candidates: batch },
+          { id: uid(), type: "snippet-talents", candidates: batch, matcherTriggered: true },
         ]);
       }, snippetDelay + SNIPPET_THINK_MS);
       snippetDelay += SNIPPET_THINK_MS + 400;
@@ -513,7 +513,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents":
-        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} />;
+        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} matcherTriggered={msg.matcherTriggered} />;
       case "matcher-joined":
         return (
           <div className="flex items-center gap-3 py-1">
