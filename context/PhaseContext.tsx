@@ -33,7 +33,6 @@ interface PhaseContextValue {
   // Candidates — hidden until revealed in thread
   candidatesRevealed: boolean;
   candidatesNew: boolean;
-  markCandidatesViewed: () => void;
   // Candidate pool — grows as batches are revealed in the thread
   revealedCandidates: Candidate[];
   revealNextBatch: (count: number) => Candidate[];
@@ -59,7 +58,6 @@ const PhaseContext = createContext<PhaseContextValue>({
   markJobDetailsViewed: () => {},
   candidatesRevealed: false,
   candidatesNew: false,
-  markCandidatesViewed: () => {},
   revealedCandidates: [],
   revealNextBatch: () => [],
   candidateDecisions: {},
@@ -113,12 +111,13 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
     return batch;
   }
 
-  function markCandidatesViewed() {
-    setCandidatesNew(false);
-  }
-
   function setCandidateDecision(id: string, decision: Decision) {
-    setCandidateDecisions((prev) => ({ ...prev, [id]: decision }));
+    setCandidateDecisions((prev) => {
+      const updated = { ...prev, [id]: decision };
+      const allReviewed = revealedCandidates.every((c) => updated[c.id] != null);
+      if (allReviewed) setCandidatesNew(false);
+      return updated;
+    });
     setStatusHistory((prev) => ({
       ...prev,
       [id]: [...(prev[id] ?? []), { decision, timestamp: new Date() }],
@@ -143,7 +142,6 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         markJobDetailsViewed,
         candidatesRevealed,
         candidatesNew,
-        markCandidatesViewed,
         revealedCandidates,
         revealNextBatch,
         candidateDecisions,

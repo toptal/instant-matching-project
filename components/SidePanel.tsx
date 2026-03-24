@@ -15,7 +15,7 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, markCandidatesViewed } = usePhase();
+  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -100,7 +100,7 @@ export default function SidePanel() {
               <NavRow
                 label={`Candidates (${revealedCandidates.length})`}
                 badge={candidatesNew ? "New Talent" : undefined}
-                onClick={() => { markCandidatesViewed(); setActivePanel("candidates"); }}
+                onClick={() => setActivePanel("candidates")}
               />
               <Separator />
             </div>
