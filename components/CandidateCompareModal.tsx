@@ -9,6 +9,7 @@ type Props = {
   matcherRevealedIds: string[];
   onClose: () => void;
   onDecide: (id: string, decision: Decision) => void;
+  onRemove: (id: string) => void;
 };
 
 const NOT_A_FIT_REASONS = [
@@ -114,6 +115,7 @@ export default function CandidateCompareModal({
   matcherRevealedIds,
   onClose,
   onDecide,
+  onRemove,
 }: Props) {
 
   function LabelCell({
@@ -265,6 +267,29 @@ export default function CandidateCompareModal({
                           {decision === "interested" ? "Interested" : "Not a fit"}
                         </div>
                       )}
+                      {candidates.length > 2 && <button
+                        onClick={() => onRemove(c.id)}
+                        className="absolute flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                        style={{
+                          top: 8,
+                          right: 8,
+                          color: "rgba(255,255,255,0.85)",
+                          background: "rgba(0,0,0,0.32)",
+                          backdropFilter: "blur(4px)",
+                          border: "1px solid rgba(255,255,255,0.18)",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.55)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.32)";
+                        }}
+                      >
+                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                          <path d="M1 1l7 7M8 1L1 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                        Remove
+                      </button>}
                     </div>
                     {/* Name + badge */}
                     <div className="flex items-start gap-2 mb-1">
