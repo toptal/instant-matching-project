@@ -180,7 +180,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                     <button
                       disabled
                       className="w-full py-2 rounded text-[13px] font-semibold text-white"
-                      style={{ background: "#9EA8B3", cursor: "not-allowed" }}
+                      style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
                     >
                       Schedule Interview
                     </button>
@@ -188,7 +188,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
                       style={{ background: "#1a1a2e" }}
                     >
-                      Available after interview stage
+                      We are confirming talent availability
                       <div
                         className="absolute top-full left-1/2 -translate-x-1/2"
                         style={{
