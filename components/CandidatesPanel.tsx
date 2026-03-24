@@ -356,7 +356,7 @@ function CandidateCard({
 export default function CandidatesPanel({ onBack }: Props) {
   const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates, matcherRevealedIds } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
-  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [modalCandidateId, setModalCandidateId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
 
@@ -373,6 +373,10 @@ export default function CandidatesPanel({ onBack }: Props) {
     if (filter === "interested-not-reviewed") return d === "interested" || d === null;
     return d === "not-a-fit";
   });
+
+  const modalIndex = modalCandidateId !== null
+    ? filtered.findIndex((c) => c.id === modalCandidateId)
+    : -1;
 
   return (
     <div className="flex flex-col h-full">
@@ -444,7 +448,7 @@ export default function CandidatesPanel({ onBack }: Props) {
                     decision={decision}
                     isSelected={isSelected}
                     isMatcher={matcherRevealedIds.includes(c.id)}
-                    onOpenModal={() => setModalIndex(i)}
+                    onOpenModal={() => setModalCandidateId(c.id)}
                     onToggleSelect={(e) => toggleSelect(c.id, e)}
                   />
                 );
@@ -455,7 +459,7 @@ export default function CandidatesPanel({ onBack }: Props) {
       )}
 
       {/* Individual candidate modal */}
-      {modalIndex !== null && filtered.length > 0 && createPortal(
+      {modalCandidateId !== null && modalIndex >= 0 && createPortal(
         <CandidateModal
           candidates={filtered.map(c => ({
             ...c,
@@ -463,11 +467,11 @@ export default function CandidatesPanel({ onBack }: Props) {
           }))}
           currentIndex={modalIndex}
           decisions={filtered.map((c) => candidateDecisions[c.id] ?? null)}
-          onClose={() => setModalIndex(null)}
+          onClose={() => setModalCandidateId(null)}
           onDecide={(localIndex, decision) => {
             setCandidateDecision(filtered[localIndex].id, decision);
           }}
-          onNavigate={(i) => setModalIndex(i)}
+          onNavigate={(i) => setModalCandidateId(filtered[i]?.id ?? null)}
         />,
         document.body
       )}
