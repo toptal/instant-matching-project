@@ -129,7 +129,7 @@ function DecisionBadge({ decision }: { decision: Decision }) {
 }
 
 export default function CandidatesPanel({ onBack }: Props) {
-  const { candidateDecisions, setCandidateDecision, interestedCount, candidatesRevealed, revealedCandidates } = usePhase();
+  const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
@@ -151,14 +151,6 @@ export default function CandidatesPanel({ onBack }: Props) {
             Candidates
           </span>
         </div>
-        {interestedCount > 0 && (
-          <span
-            className="text-[11px] font-semibold px-2 py-0.5 rounded"
-            style={{ background: "#E6F9F2", color: "#03B080" }}
-          >
-            {interestedCount} shortlisted
-          </span>
-        )}
       </div>
 
       <div style={{ height: 1, background: "#EBECED" }} />
