@@ -127,7 +127,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
         {/* Front card */}
         {frontIndex < candidates.length && c && (
           <div
-            className="relative flex gap-6 rounded-sm"
+            className="relative flex items-center gap-6 rounded-sm"
             style={{
               border: "1.5px solid #EBECED",
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
@@ -155,7 +155,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
             {/* Left — white box */}
             <div
-              className="flex flex-col gap-3 shrink-0 self-start"
+              className="flex flex-col gap-3 shrink-0"
               style={{ background: "white", padding: 16, width: 182 }}
             >
               {/* Photo */}
@@ -174,13 +174,42 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                 <p className="text-[14px] leading-[22px] text-black">{c.role}</p>
               </div>
               {decision ? (
-                <button
-                  className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
-                  style={{ border: "1px solid #EBECED", color: "#455065", background: "white" }}
-                  onClick={() => setModalIndex(displayIndex)}
-                >
-                  More Details
-                </button>
+                <div className="flex flex-col gap-2">
+                  {/* Disabled primary button with hover tooltip */}
+                  <div className="relative group">
+                    <button
+                      disabled
+                      className="w-full py-2 rounded text-[13px] font-semibold text-white"
+                      style={{ background: "#9EA8B3", cursor: "not-allowed" }}
+                    >
+                      Schedule Interview
+                    </button>
+                    <div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                      style={{ background: "#1a1a2e" }}
+                    >
+                      Available after interview stage
+                      <div
+                        className="absolute top-full left-1/2 -translate-x-1/2"
+                        style={{
+                          width: 0,
+                          height: 0,
+                          borderLeft: "5px solid transparent",
+                          borderRight: "5px solid transparent",
+                          borderTop: "5px solid #1a1a2e",
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {/* Secondary button */}
+                  <button
+                    className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
+                    style={{ border: "1px solid #EBECED", color: "#455065", background: "white" }}
+                    onClick={() => setModalIndex(displayIndex)}
+                  >
+                    More Details
+                  </button>
+                </div>
               ) : (
                 <button
                   className="w-full py-2 rounded text-[13px] font-semibold text-white cursor-pointer"
