@@ -136,7 +136,7 @@ export default function VideoSnippet({ onWatched }: Props) {
         {/* Show transcription */}
         <div className="flex items-center justify-end px-4 py-2.5 bg-white">
           <button
-            className="flex items-center gap-1 text-[13px] font-semibold"
+            className="flex items-center gap-1 text-[13px] font-semibold cursor-pointer"
             style={{ color: "#204ECF" }}
           >
             Show transcription

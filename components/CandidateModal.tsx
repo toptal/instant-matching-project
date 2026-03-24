@@ -249,7 +249,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
               {NOT_A_FIT_REASONS.map((reason, i) => (
                 <button
                   key={reason}
-                  className="w-full text-left px-4 py-3 text-[14px] leading-[22px] hover:bg-gray-50 transition-colors"
+                  className="w-full text-left px-4 py-3 text-[14px] leading-[22px] hover:bg-gray-50 transition-colors cursor-pointer"
                   style={{
                     color: "#1a1a2e",
                     borderBottom: i < NOT_A_FIT_REASONS.length - 1 ? "1px solid #F3F4F6" : "none",
@@ -267,7 +267,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
             <button
               onClick={() => { currentIndex > 0 && onNavigate(currentIndex - 1); setShowReasons(false); }}
               disabled={currentIndex === 0}
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ border: "1px solid #EBECED", color: currentIndex === 0 ? "#C4C6CA" : "#455065" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -277,7 +277,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
 
             {/* Not a fit */}
             <button
-              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors"
+              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
               style={{
                 border: "1px solid #EBECED",
                 color: decision === "not-a-fit" ? "#8A9099" : "#455065",
@@ -290,7 +290,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
 
             {/* Interested */}
             <button
-              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-colors"
+              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-colors cursor-pointer"
               style={{ background: decision === "interested" ? "#027a56" : "#03B080" }}
               onClick={() => { setShowReasons(false); onDecide(currentIndex, "interested"); }}
             >
@@ -301,7 +301,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
             <button
               onClick={() => { currentIndex < candidates.length - 1 && onNavigate(currentIndex + 1); setShowReasons(false); }}
               disabled={currentIndex === candidates.length - 1}
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ border: "1px solid #EBECED", color: currentIndex === candidates.length - 1 ? "#C4C6CA" : "#455065" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

@@ -68,7 +68,7 @@ function CandidateActionBar({
           {NOT_A_FIT_REASONS.map((reason, i) => (
             <button
               key={reason}
-              className="w-full text-left px-4 py-3 text-[13px] leading-[20px] hover:bg-gray-50 transition-colors"
+              className="w-full text-left px-4 py-3 text-[13px] leading-[20px] hover:bg-gray-50 transition-colors cursor-pointer"
               style={{
                 color: "#1a1a2e",
                 borderBottom:
@@ -83,7 +83,7 @@ function CandidateActionBar({
       )}
       <div className="flex gap-2">
         <button
-          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-colors"
+          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer"
           style={{
             border: "1px solid #EBECED",
             color: decision === "not-a-fit" ? "#8A9099" : "#455065",
@@ -95,7 +95,7 @@ function CandidateActionBar({
           {decision === "not-a-fit" ? "✗ Not a Fit" : "Not a Fit"}
         </button>
         <button
-          className="flex-1 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors"
+          className="flex-1 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors cursor-pointer"
           style={{ background: decision === "interested" ? "#027a56" : "#03B080" }}
           onClick={() => {
             setShowReasons(false);
@@ -273,7 +273,7 @@ export default function CandidateCompareModal({
                       )}
                       {candidates.length > 2 && <button
                         onClick={() => onRemove(c.id)}
-                        className="absolute flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                        className="absolute flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer"
                         style={{
                           top: 8,
                           right: 8,
