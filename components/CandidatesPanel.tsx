@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { usePhase } from "@/context/PhaseContext";
 import type { Decision } from "@/data/candidates";
 import CandidateModal from "./CandidateModal";
+import CandidateCompareModal from "./CandidateCompareModal";
 
 type FilterOption = "interested-not-reviewed" | "not-a-fit";
 
@@ -128,10 +129,44 @@ function DecisionBadge({ decision }: { decision: Decision }) {
   );
 }
 
+function SelectionCheckbox({ selected }: { selected: boolean }) {
+  return (
+    <div
+      className="w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+      style={{
+        background: selected ? "#204ECF" : "white",
+        border: selected ? "none" : "1.5px solid #C4C6CA",
+        boxShadow: selected ? "0 1px 4px rgba(32,78,207,0.25)" : "none",
+      }}
+    >
+      {selected && (
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path
+            d="M2 5l2.5 2.5 3.5-4"
+            stroke="white"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 export default function CandidatesPanel({ onBack }: Props) {
   const { candidateDecisions, setCandidateDecision, candidatesRevealed, revealedCandidates, matcherRevealedIds } = usePhase();
   const [filter, setFilter] = useState<FilterOption>("interested-not-reviewed");
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  function toggleSelect(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   const filtered = revealedCandidates.filter((c) => {
     const d = candidateDecisions[c.id] ?? null;
@@ -151,6 +186,21 @@ export default function CandidatesPanel({ onBack }: Props) {
             Candidates
           </span>
         </div>
+        <button
+          onClick={() => selectedIds.length >= 2 && setCompareOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[13px] font-semibold transition-colors"
+          style={{
+            background: selectedIds.length >= 2 ? "#204ECF" : "#F3F4F6",
+            color: selectedIds.length >= 2 ? "white" : "#9EA8B3",
+            cursor: selectedIds.length >= 2 ? "pointer" : "default",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
+            <rect x="8" y="2" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
+          </svg>
+          Compare{selectedIds.length >= 2 ? ` (${selectedIds.length})` : ""}
+        </button>
       </div>
 
       <div style={{ height: 1, background: "#EBECED" }} />
@@ -186,15 +236,29 @@ export default function CandidatesPanel({ onBack }: Props) {
             ) : (
               filtered.map((c, i) => {
                 const decision = candidateDecisions[c.id] ?? null;
+                const isSelected = selectedIds.includes(c.id);
                 return (
                   <button
                     key={c.id}
                     className="relative flex flex-col gap-3 p-3 rounded-lg text-left w-full"
-                    style={{ background: "#F3F4F6", cursor: "pointer" }}
+                    style={{
+                      background: isSelected ? "#EEF2FC" : "#F3F4F6",
+                      cursor: "pointer",
+                      outline: isSelected ? "2px solid #204ECF" : "none",
+                      outlineOffset: -2,
+                    }}
                     onClick={() => setModalIndex(i)}
                   >
                     {/* Decision badge — left-edge pill */}
                     <DecisionBadge decision={decision} />
+
+                    {/* Selection checkbox — top-right corner */}
+                    <div
+                      className="absolute top-2 right-2 z-10"
+                      onClick={(e) => toggleSelect(c.id, e)}
+                    >
+                      <SelectionCheckbox selected={isSelected} />
+                    </div>
 
                     {/* Photo */}
                     {c.photo ? (
@@ -242,7 +306,7 @@ export default function CandidatesPanel({ onBack }: Props) {
         </div>
       )}
 
-      {/* Modal — portalled to document.body so it overlays the full viewport */}
+      {/* Individual candidate modal */}
       {modalIndex !== null && filtered.length > 0 && createPortal(
         <CandidateModal
           candidates={filtered}
@@ -256,6 +320,22 @@ export default function CandidatesPanel({ onBack }: Props) {
         />,
         document.body
       )}
+
+      {/* Compare modal */}
+      {compareOpen && (() => {
+        const compareCandidates = revealedCandidates.filter((c) => selectedIds.includes(c.id));
+        if (compareCandidates.length < 2) return null;
+        return createPortal(
+          <CandidateCompareModal
+            candidates={compareCandidates}
+            decisions={compareCandidates.map((c) => candidateDecisions[c.id] ?? null)}
+            matcherRevealedIds={matcherRevealedIds}
+            onClose={() => setCompareOpen(false)}
+            onDecide={(id, decision) => setCandidateDecision(id, decision)}
+          />,
+          document.body
+        );
+      })()}
     </div>
   );
 }
