@@ -3,6 +3,7 @@ export type Decision = "interested" | "not-a-fit" | null;
 export type Candidate = {
   id: string;
   name: string;
+  photo?: string;
   role: string;
   badge: string;
   source: "system" | "matcher";
@@ -26,6 +27,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c1",
     name: "Kimberly Saxton",
+    photo: "/photos/woman1.png",
     role: "Frontend Developer",
     badge: "Auto-matched",
     source: "system",
@@ -92,7 +94,8 @@ export const CANDIDATES: Candidate[] = [
   },
   {
     id: "c2",
-    name: "Marcus Chen",
+    name: "Chris Davenport",
+    photo: "/photos/man3.png",
     role: "Full-Stack Developer",
     badge: "Auto-matched",
     source: "system",
@@ -106,7 +109,7 @@ export const CANDIDATES: Candidate[] = [
     availability: "Full Time",
     localTime: "10:30 AM Local Time",
     about:
-      "Marcus is a full-stack engineer with deep expertise in building high-throughput distributed systems. He specialises in API architecture, real-time features, and cloud infrastructure on AWS, and has a strong record of leading technical migrations without service disruption. Marcus has mentored junior and mid-level engineers throughout his career and is known for raising the bar on code quality through thoughtful pull-request reviews and design documents. He communicates clearly with non-technical stakeholders and is comfortable owning entire product surface areas end-to-end — from database schema design to React component libraries. Outside of work he contributes to open-source projects in the Node.js ecosystem and writes a technical blog followed by over 8,000 developers.",
+      "Chris is a full-stack engineer with deep expertise in building high-throughput distributed systems. He specialises in API architecture, real-time features, and cloud infrastructure on AWS, and has a strong record of leading technical migrations without service disruption. Chris has mentored junior and mid-level engineers throughout his career and is known for raising the bar on code quality through thoughtful pull-request reviews and design documents. He communicates clearly with non-technical stakeholders and is comfortable owning entire product surface areas end-to-end — from database schema design to React component libraries. Outside of work he contributes to open-source projects in the Node.js ecosystem and writes a technical blog followed by over 8,000 developers.",
     experience: [
       {
         title: "Senior Software Engineer",
@@ -151,7 +154,8 @@ export const CANDIDATES: Candidate[] = [
   },
   {
     id: "c3",
-    name: "Priya Sharma",
+    name: "Emma Walsh",
+    photo: "/photos/woman3.png",
     role: "Backend Developer",
     badge: "Auto-matched",
     source: "matcher",
@@ -166,7 +170,7 @@ export const CANDIDATES: Candidate[] = [
     availability: "Part Time (30 hours/week)",
     localTime: "3:15 PM Local Time",
     about:
-      "Priya is a backend engineer with a strong foundation in cloud infrastructure and distributed systems design. She has led architecture reviews, designed event-driven systems using AWS EventBridge and SQS, and mentored junior engineers across multiple teams. Priya has a rigorous approach to reliability engineering — she introduced SLO frameworks at her last two employers and drove the adoption of chaos engineering practices that proactively surfaced failure modes before they reached production. She holds AWS Solutions Architect – Professional and AWS DevOps Engineer – Professional certifications, and regularly speaks at local cloud meetups. Her communication style is precise and jargon-free, making her particularly effective at bridging engineering and product conversations.",
+      "Emma is a backend engineer with a strong foundation in cloud infrastructure and distributed systems design. She has led architecture reviews, designed event-driven systems using AWS EventBridge and SQS, and mentored junior engineers across multiple teams. Emma has a rigorous approach to reliability engineering — she introduced SLO frameworks at her last two employers and drove the adoption of chaos engineering practices that proactively surfaced failure modes before they reached production. She holds AWS Solutions Architect – Professional and AWS DevOps Engineer – Professional certifications, and regularly speaks at local cloud meetups. Her communication style is precise and jargon-free, making her particularly effective at bridging engineering and product conversations.",
     experience: [
       {
         title: "Backend Engineer",
@@ -191,7 +195,7 @@ export const CANDIDATES: Candidate[] = [
       },
       {
         title: "Software Engineer",
-        company: "Flipkart",
+        company: "Zalando",
         years: "2015 - 2017",
         bullets: [
           "Developed order management microservices handling 2M+ transactions per day during peak sale events.",
@@ -200,7 +204,7 @@ export const CANDIDATES: Candidate[] = [
       },
       {
         title: "Junior Software Engineer",
-        company: "Infosys",
+        company: "Accenture",
         years: "2013 - 2015",
         bullets: [
           "Built REST APIs for banking clients using Python and Django, meeting stringent security compliance requirements.",
@@ -214,6 +218,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c4",
     name: "Aleksei Volkov",
+    photo: "/photos/man1.png",
     role: "Backend Developer",
     badge: "Matcher pick",
     source: "matcher",
@@ -274,6 +279,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c5",
     name: "Sofia Lindqvist",
+    photo: "/photos/woman4.png",
     role: "Frontend Engineer",
     badge: "Matcher pick",
     source: "matcher",
@@ -334,6 +340,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c6",
     name: "Daniel Osei",
+    photo: "/photos/man2.png",
     role: "DevOps / Platform Engineer",
     badge: "Auto-matched",
     source: "system",
@@ -395,6 +402,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c7",
     name: "Yuki Tanaka",
+    photo: "/photos/woman5.png",
     role: "Full-Stack Engineer",
     badge: "Auto-matched",
     source: "system",
@@ -454,6 +462,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c8",
     name: "Ravi Patel",
+    photo: "/photos/man4.png",
     role: "Backend / Data Engineer",
     badge: "Auto-matched",
     source: "system",
@@ -513,6 +522,7 @@ export const CANDIDATES: Candidate[] = [
   {
     id: "c9",
     name: "Amara Okonkwo",
+    photo: "/photos/woman2.png",
     role: "Mobile Engineer (React Native)",
     badge: "Matcher pick",
     source: "matcher",
