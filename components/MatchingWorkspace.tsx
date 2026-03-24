@@ -12,6 +12,7 @@ import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 import type { SnippetItem } from "@/data/scenario";
 import type { Candidate } from "@/data/candidates";
 import { getActiveScenario } from "@/utils/scenarioStorage";
+import { MATCHER_SCENARIO } from "@/data/matcherScenario";
 
 const TOOLTIP_KEYWORDS = [
   "requirements",
@@ -32,7 +33,9 @@ type Message =
   | { id: string; type: "snippet-steps" }
   | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
   | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string }
-  | { id: string; type: "interaction-options"; options: string[]; action: string };
+  | { id: string; type: "interaction-options"; options: string[]; action: string }
+  | { id: string; type: "matcher-joined" }
+  | { id: string; type: "matcher-text"; content: string };
 
 // Character-by-character typewriter for dynamically-appended AI messages
 function TypewriterText({
@@ -128,7 +131,7 @@ const SNIPPET_THINK_MS = 1400;
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch, matcherChatActive } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
@@ -157,12 +160,35 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const animatedIds = useRef(new Set<string>());
   // Current position in the scenario script
   const currentStepRef = useRef(-1);
+  // Matcher chat state
+  const [matcherJoining, setMatcherJoining] = useState(false);
+  const matcherStepRef = useRef(0);
+  const prevMatcherChatActive = useRef(false);
 
   useEffect(() => {
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Trigger matcher joining sequence when matcherChatActive flips to true
+  useEffect(() => {
+    if (matcherChatActive && !prevMatcherChatActive.current) {
+      prevMatcherChatActive.current = true;
+      setMatcherJoining(true);
+      matcherStepRef.current = 0;
+      // Show "joined" notification after short delay, then play first matcher message
+      const t1 = setTimeout(() => {
+        setMessages((prev) => [...prev, { id: uid(), type: "matcher-joined" }]);
+        setMatcherJoining(false);
+      }, 1500);
+      const t2 = setTimeout(() => {
+        playMatcherStep(0);
+      }, 2200);
+      pendingTimeouts.current.push(t1, t2);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matcherChatActive]);
 
   function schedule(fn: () => void, delay: number) {
     const t = setTimeout(fn, delay);
@@ -187,6 +213,47 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     const id = uid();
     animatedIds.current.add(id);
     setMessages((prev) => [...prev, { id, type: "ai-heading", content: text }]);
+  }
+
+  // Append a matcher message (green bubble)
+  function appendMatcherText(text: string) {
+    const id = uid();
+    animatedIds.current.add(id);
+    setMessages((prev) => [...prev, { id, type: "matcher-text", content: text }]);
+  }
+
+  // Play a step from the matcher scenario
+  function playMatcherStep(stepIndex: number) {
+    if (stepIndex >= MATCHER_SCENARIO.length) return;
+    const step = MATCHER_SCENARIO[stepIndex];
+    matcherStepRef.current = stepIndex;
+
+    setActiveOptions(null);
+    setIsLoading(true);
+
+    const delay = 800;
+    schedule(() => {
+      appendMatcherText(step.matcherText);
+    }, delay);
+
+    schedule(() => {
+      setIsLoading(false);
+      if (step.userOptions.length > 0) {
+        setActiveOptions(step.userOptions);
+      }
+    }, delay + step.matcherText.length * TYPEWRITER_CHAR_MS + 400);
+  }
+
+  // Advance the matcher scenario (called when user sends a message while matcher is active)
+  function advanceMatcherScenario(userText?: string) {
+    cancelAll();
+    if (userText) {
+      setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
+    }
+    const nextStep = matcherStepRef.current + 1;
+    if (nextStep < MATCHER_SCENARIO.length) {
+      playMatcherStep(nextStep);
+    }
   }
 
   // Map RequirementSnippet state → variant + version label
@@ -333,14 +400,22 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     }, 700);
   }
 
-  // User sends a free-form message → advance scenario
+  // User sends a free-form message → advance scenario (or matcher scenario if active)
   function handleSend(text: string) {
-    advanceScenario(text);
+    if (matcherChatActive) {
+      advanceMatcherScenario(text);
+    } else {
+      advanceScenario(text);
+    }
   }
 
   // User clicks a quick-reply chip → post it as user message and advance scenario
   function handleOptionSelect(option: string) {
-    advanceScenario(option);
+    if (matcherChatActive) {
+      advanceMatcherScenario(option);
+    } else {
+      advanceScenario(option);
+    }
   }
 
   function renderMessage(msg: Message) {
@@ -414,6 +489,50 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents":
         return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} />;
+      case "matcher-joined":
+        return (
+          <div className="flex items-center gap-3 py-1">
+            <div style={{ flex: 1, height: 1, background: "#E8F8F2" }} />
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: "#03B080" }}
+              />
+              <span
+                className="text-[12px] font-semibold"
+                style={{ color: "#03B080" }}
+              >
+                Steven Kovacel joined the conversation
+              </span>
+            </div>
+            <div style={{ flex: 1, height: 1, background: "#E8F8F2" }} />
+          </div>
+        );
+      case "matcher-text": {
+        const animate = animatedIds.current.has(msg.id);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="text-[12px] font-semibold" style={{ color: "#03B080" }}>
+              Steven Kovacel
+            </span>
+            <div
+              className="rounded-2xl px-4 py-2.5 max-w-[85%] text-[14px] leading-[22px]"
+              style={{ background: "#E8F8F2", color: "#1a3a2e" }}
+            >
+              {animate ? (
+                <TypewriterText
+                  text={msg.content}
+                  threadRef={threadRef}
+                  className="text-[14px] leading-[22px]"
+                  style={{ color: "#1a3a2e" }}
+                />
+              ) : (
+                <p>{msg.content}</p>
+              )}
+            </div>
+          </div>
+        );
+      }
     }
   }
 
@@ -490,7 +609,13 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
                   ))}
                 </div>
               )}
-              <ChatInput onSend={handleSend} isLoading={isLoading} onStop={cancelAll} />
+              <ChatInput
+                onSend={handleSend}
+                isLoading={isLoading}
+                onStop={cancelAll}
+                matcherActive={matcherChatActive}
+                matcherJoining={matcherJoining}
+              />
             </div>
           </div>
 

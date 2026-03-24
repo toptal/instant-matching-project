@@ -23,6 +23,9 @@ interface PhaseContextValue {
   setActivePhase: (n: number) => void;
   tooltipTriggerCount: number;
   triggerMatcherTooltip: () => void;
+  // Matcher chat
+  matcherChatActive: boolean;
+  activateMatcherChat: () => void;
   // Job Details — live state synced from thread snippets
   jdVariant: "initial" | "refined" | null;
   jdVersionLabel: string | null;
@@ -50,6 +53,8 @@ const PhaseContext = createContext<PhaseContextValue>({
   setActivePhase: () => {},
   tooltipTriggerCount: 0,
   triggerMatcherTooltip: () => {},
+  matcherChatActive: false,
+  activateMatcherChat: () => {},
   jdVariant: null,
   jdVersionLabel: null,
   jdHistory: [],
@@ -69,6 +74,7 @@ const PhaseContext = createContext<PhaseContextValue>({
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
   const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
+  const [matcherChatActive, setMatcherChatActive] = useState(false);
   const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jdHistory, setJdHistory] = useState<JdHistoryEntry[]>([]);
@@ -84,6 +90,10 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
 
   function triggerMatcherTooltip() {
     setTooltipTriggerCount((n) => n + 1);
+  }
+
+  function activateMatcherChat() {
+    setMatcherChatActive(true);
   }
 
   function updateJobDetails(variant: "initial" | "refined", versionLabel: string) {
@@ -134,6 +144,8 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         setActivePhase,
         tooltipTriggerCount,
         triggerMatcherTooltip,
+        matcherChatActive,
+        activateMatcherChat,
         jdVariant,
         jdVersionLabel,
         jdHistory,
