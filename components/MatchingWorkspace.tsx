@@ -236,12 +236,26 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       appendMatcherText(step.matcherText);
     }, delay);
 
-    schedule(() => {
-      setIsLoading(false);
-      if (step.userOptions.length > 0) {
-        setActiveOptions(step.userOptions);
-      }
-    }, delay + step.matcherText.length * TYPEWRITER_CHAR_MS + 400);
+    const afterText = delay + step.matcherText.length * TYPEWRITER_CHAR_MS + 400;
+
+    if (step.talentsSnippet) {
+      schedule(() => {
+        const batch = revealNextBatch(3);
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), type: "snippet-talents", candidates: batch },
+        ]);
+      }, afterText + SNIPPET_THINK_MS);
+      schedule(() => {
+        setIsLoading(false);
+        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
+      }, afterText + SNIPPET_THINK_MS + 400);
+    } else {
+      schedule(() => {
+        setIsLoading(false);
+        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
+      }, afterText);
+    }
   }
 
   // Advance the matcher scenario (called when user sends a message while matcher is active)

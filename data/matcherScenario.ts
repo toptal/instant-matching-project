@@ -10,6 +10,7 @@ export type MatcherScenarioStep = {
   id: string;
   matcherText: string;
   userOptions: string[];
+  talentsSnippet?: true;
 };
 
 export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
@@ -40,7 +41,8 @@ export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
   {
     id: "m5",
     matcherText:
-      "Done. I've updated the requirements and added two candidates I'm confident about. Feel free to keep going on your end — I'll check back in if I spot anything else worth flagging.",
+      "Done. I've updated the requirements and added a few candidates I'm confident about — have a look below. Feel free to keep going on your end and I'll check back in if I spot anything else worth flagging.",
+    talentsSnippet: true,
     userOptions: ["Thanks, Steven!", "Looks good"],
   },
 ];
