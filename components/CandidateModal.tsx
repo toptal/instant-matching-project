@@ -275,27 +275,63 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
               </svg>
             </button>
 
-            {/* Not a fit */}
-            <button
-              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
-              style={{
-                border: "1px solid #EBECED",
-                color: decision === "not-a-fit" ? "#8A9099" : "#455065",
-                background: decision === "not-a-fit" ? "#F3F4F6" : showReasons ? "#F3F4F6" : "white",
-              }}
-              onClick={handleNotAFit}
-            >
-              {decision === "not-a-fit" ? "✗ Not a Fit" : "Not a Fit"}
-            </button>
+            {decision === "interested" ? (
+              <>
+                {/* Not a fit */}
+                <button
+                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
+                  style={{ border: "1px solid #EBECED", color: "#455065", background: showReasons ? "#F3F4F6" : "white" }}
+                  onClick={handleNotAFit}
+                >
+                  Not a Fit
+                </button>
 
-            {/* Interested */}
-            <button
-              className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-colors cursor-pointer"
-              style={{ background: decision === "interested" ? "#027a56" : "#03B080" }}
-              onClick={() => { setShowReasons(false); onDecide(currentIndex, "interested"); }}
-            >
-              {decision === "interested" ? "✓ Interested" : "Interested"}
-            </button>
+                {/* Schedule Interview — disabled primary with tooltip */}
+                <div className="relative flex-1 group">
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-lg text-[14px] font-semibold text-white"
+                    style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
+                  >
+                    Schedule Interview
+                  </button>
+                  <div
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                    style={{ background: "#1a1a2e" }}
+                  >
+                    We are confirming talent availability
+                    <div
+                      className="absolute top-full left-1/2 -translate-x-1/2"
+                      style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Not a fit */}
+                <button
+                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
+                  style={{
+                    border: "1px solid #EBECED",
+                    color: decision === "not-a-fit" ? "#8A9099" : "#455065",
+                    background: decision === "not-a-fit" ? "#F3F4F6" : showReasons ? "#F3F4F6" : "white",
+                  }}
+                  onClick={handleNotAFit}
+                >
+                  {decision === "not-a-fit" ? "✗ Not a Fit" : "Not a Fit"}
+                </button>
+
+                {/* Interested */}
+                <button
+                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-colors cursor-pointer"
+                  style={{ background: "#03B080" }}
+                  onClick={() => { setShowReasons(false); onDecide(currentIndex, "interested"); }}
+                >
+                  Interested
+                </button>
+              </>
+            )}
 
             {/* Next */}
             <button
