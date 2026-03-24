@@ -165,47 +165,38 @@ function InfoIcon() {
   );
 }
 
-function AvailabilityRow() {
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+function ScheduleInterviewButton() {
   return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className="text-[12px] leading-[18px]"
-        style={{ color: "#84888e" }}
+    <div className="relative flex-1 group">
+      <button
+        disabled
+        className="w-full flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] text-white whitespace-nowrap"
+        style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
       >
-        Confirming Availability...
-      </span>
+        Schedule Interview
+      </button>
       <div
-        className="relative flex items-center cursor-default"
-        onMouseEnter={() => setTooltipVisible(true)}
-        onMouseLeave={() => setTooltipVisible(false)}
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
+        style={{ background: "#1a1a2e" }}
       >
-        <InfoIcon />
-        {tooltipVisible && (
-          <div
-            className="absolute bottom-full left-1/2 mb-2 px-2.5 py-1.5 rounded text-[11px] leading-[16px] text-white whitespace-nowrap z-50"
-            style={{
-              background: "#1a1a2e",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-              transform: "translateX(-50%)",
-            }}
-          >
-            We&apos;re confirming this talent&apos;s availability
-            <div
-              className="absolute top-full left-1/2 -translate-x-1/2"
-              style={{
-                width: 0,
-                height: 0,
-                borderLeft: "5px solid transparent",
-                borderRight: "5px solid transparent",
-                borderTop: "5px solid #1a1a2e",
-              }}
-            />
-          </div>
-        )}
+        We are confirming talent availability
+        <div
+          className="absolute top-full left-1/2 -translate-x-1/2"
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderTop: "5px solid #1a1a2e",
+          }}
+        />
       </div>
     </div>
   );
+}
+
+function AvailabilityRow() {
+  return null;
 }
 
 interface CandidateCardProps {
@@ -326,18 +317,7 @@ function CandidateCard({
             >
               More Details
             </button>
-            <button
-              disabled
-              className="flex-1 flex items-center justify-center px-2 py-2 rounded text-[13px] font-semibold leading-[16px] whitespace-nowrap"
-              style={{
-                background: "#F3F4F6",
-                border: "1px solid #D8D9DC",
-                color: "#9EA8B3",
-                cursor: "default",
-              }}
-            >
-              Schedule Interview
-            </button>
+            <ScheduleInterviewButton />
           </>
         ) : (
           <button
