@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import type { Candidate, Decision } from "@/data/candidates";
 
 type Props = {
@@ -19,209 +19,9 @@ const NOT_A_FIT_REASONS = [
   "Other",
 ];
 
-const COLUMN_WIDTH = 320;
-
-function CandidateColumnContent({
-  candidate,
-  decision,
-  isMatcherPick,
-  isLast,
-}: {
-  candidate: Candidate;
-  decision: Decision;
-  isMatcherPick: boolean;
-  isLast: boolean;
-}) {
-  return (
-    <div
-      style={{
-        width: COLUMN_WIDTH,
-        flexShrink: 0,
-        borderRight: isLast ? "none" : "1px solid #EBECED",
-      }}
-    >
-      {/* Navy header */}
-      <div style={{ background: "#1B2D72", padding: "24px 20px 20px" }}>
-        {/* Photo */}
-        <div className="relative mb-4">
-          {candidate.photo ? (
-            <img
-              src={candidate.photo}
-              alt={candidate.name}
-              className="w-full object-cover object-top rounded"
-              style={{ height: 180 }}
-            />
-          ) : (
-            <div
-              className="w-full rounded"
-              style={{
-                height: 180,
-                background:
-                  "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
-              }}
-            />
-          )}
-          {decision && (
-            <div
-              className="absolute flex items-center px-3 text-[12px] font-semibold leading-[18px] text-white"
-              style={{
-                top: 10,
-                left: 0,
-                paddingTop: 2,
-                paddingBottom: 2,
-                background: decision === "interested" ? "#03B080" : "#E53935",
-                borderRadius: "0 20px 20px 0",
-              }}
-            >
-              {decision === "interested" ? "Interested" : "Not a fit"}
-            </div>
-          )}
-        </div>
-
-        {/* Name + badge */}
-        <div className="flex items-start gap-2 mb-1">
-          <h3 className="text-white font-bold text-[18px] leading-[28px] flex-1">
-            {candidate.name}
-          </h3>
-          <span
-            className="px-2 py-0.5 rounded text-[11px] font-semibold leading-[18px] text-white shrink-0 mt-1"
-            style={{ border: "1px solid rgba(255,255,255,0.5)" }}
-          >
-            {isMatcherPick ? "Matcher pick" : "Auto-matched"}
-          </span>
-        </div>
-        <p
-          className="text-[13px] leading-[20px] mb-3"
-          style={{ color: "rgba(255,255,255,0.7)" }}
-        >
-          {candidate.role}
-        </p>
-
-        <div style={{ height: 1, background: "rgba(255,255,255,0.2)", marginBottom: 12 }} />
-
-        {/* Reasons */}
-        <div className="flex flex-col gap-2 mb-3">
-          {candidate.reasons.map((r, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                className="shrink-0 mt-0.5"
-              >
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="#03B080"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-[13px] leading-[20px] text-white">
-                {r.full ? (
-                  r.full
-                ) : (
-                  <>
-                    {r.pre}
-                    <span className="font-semibold">{r.bold}</span>
-                    {r.post}
-                  </>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ height: 1, background: "rgba(255,255,255,0.2)", marginBottom: 12 }} />
-
-        {/* Skills */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {candidate.skills.map((s) => (
-            <span
-              key={s}
-              className="px-2 py-1 rounded text-[11px] font-semibold"
-              style={{ border: "1px solid #03B080", color: "#03B080" }}
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-
-        <div style={{ height: 1, background: "rgba(255,255,255,0.2)", marginBottom: 12 }} />
-
-        {/* Availability */}
-        <div
-          className="flex flex-col gap-1 text-[12px] leading-[18px]"
-          style={{ color: "rgba(255,255,255,0.75)" }}
-        >
-          <span>
-            Can start:{" "}
-            <span className="text-white font-medium">{candidate.canStart}</span>
-          </span>
-          <span>
-            Availability:{" "}
-            <span className="text-white font-medium">
-              {candidate.availability.replace(/\s*\(.*\)/, "")}
-            </span>
-          </span>
-          <span>{candidate.localTime}</span>
-        </div>
-      </div>
-
-      {/* White body */}
-      <div className="px-5 py-5 flex flex-col gap-5">
-        <div>
-          <h4 className="font-bold text-[15px] leading-[22px] text-black mb-2">About</h4>
-          <p className="text-[13px] leading-[20px]" style={{ color: "#455065" }}>
-            {candidate.about}
-          </p>
-        </div>
-        <div>
-          <h4 className="font-bold text-[15px] leading-[22px] text-black mb-3">Experience</h4>
-          <div className="flex flex-col gap-4">
-            {candidate.experience.map((exp, i) => (
-              <div key={i}>
-                <div className="flex items-start justify-between mb-0.5">
-                  <p className="font-semibold text-[13px] leading-[20px] text-black">
-                    {exp.title}
-                  </p>
-                  <p
-                    className="text-[12px] leading-[18px] shrink-0 ml-2"
-                    style={{ color: "#8A9099" }}
-                  >
-                    {exp.years}
-                  </p>
-                </div>
-                <p className="text-[13px] font-semibold mb-1.5" style={{ color: "#204ECF" }}>
-                  {exp.company}
-                </p>
-                <ul className="flex flex-col gap-1">
-                  {exp.bullets.map((b, j) => (
-                    <li
-                      key={j}
-                      className="flex items-start gap-2 text-[13px] leading-[20px]"
-                      style={{ color: "#455065" }}
-                    >
-                      <span
-                        className="mt-[8px] w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ background: "#8A9099" }}
-                      />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-                {i < candidate.experience.length - 1 && (
-                  <div className="mt-4" style={{ height: 1, background: "#EBECED" }} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const COLUMN_WIDTH = 300;
+const LABEL_WIDTH = 116;
+const NAVY = "#1B2D72";
 
 function CandidateActionBar({
   candidate,
@@ -315,8 +115,51 @@ export default function CandidateCompareModal({
   onClose,
   onDecide,
 }: Props) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollLeft, setScrollLeft] = useState(0);
+
+  function LabelCell({
+    label,
+    background,
+    paddingTop = 14,
+  }: {
+    label?: string;
+    background: string;
+    paddingTop?: number;
+  }) {
+    const isNavy = background === NAVY;
+    return (
+      <div
+        style={{
+          width: LABEL_WIDTH,
+          minWidth: LABEL_WIDTH,
+          position: "sticky",
+          left: 0,
+          zIndex: 10,
+          background,
+          borderRight: isNavy
+            ? "1px solid rgba(255,255,255,0.15)"
+            : "1px solid #EBECED",
+          padding: label ? `${paddingTop}px 12px 14px 16px` : 0,
+          display: "flex",
+          alignItems: "flex-start",
+        }}
+      >
+        {label && (
+          <span
+            style={{
+              color: isNavy ? "rgba(255,255,255,0.45)" : "#8A9099",
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.07em",
+              lineHeight: "16px",
+            }}
+          >
+            {label}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -325,7 +168,12 @@ export default function CandidateCompareModal({
     >
       <div
         className="relative bg-white flex flex-col rounded-xl overflow-hidden"
-        style={{ margin: 16, flex: 1, boxShadow: "0 24px 64px rgba(0,0,0,0.24)" }}
+        style={{
+          margin: "16px auto",
+          width: LABEL_WIDTH + candidates.length * COLUMN_WIDTH + 17,
+          maxWidth: "calc(100vw - 32px)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.24)",
+        }}
       >
         {/* Header */}
         <div
@@ -359,46 +207,316 @@ export default function CandidateCompareModal({
           </button>
         </div>
 
-        {/* Scrollable content area */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-auto min-h-0"
-          onScroll={(e) => setScrollLeft(e.currentTarget.scrollLeft)}
-        >
-          <div className="flex" style={{ minWidth: "max-content" }}>
-            {candidates.map((c, i) => (
-              <CandidateColumnContent
-                key={c.id}
-                candidate={c}
-                decision={decisions[i]}
-                isMatcherPick={matcherRevealedIds.includes(c.id)}
-                isLast={i === candidates.length - 1}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Single scroll container — overflow:auto handles both axes; sticky action bar stays visible */}
+        <div className="flex-1 min-h-0 overflow-auto" style={{ scrollbarGutter: "stable" }}>
+          <div style={{ minWidth: LABEL_WIDTH + candidates.length * COLUMN_WIDTH }}>
 
-        {/* Fixed action footer — always pinned at bottom, tracks horizontal scroll */}
-        <div
-          className="shrink-0 overflow-hidden"
-          style={{ borderTop: "1px solid #EBECED" }}
-        >
-          <div
-            className="flex"
-            style={{
-              minWidth: "max-content",
-              transform: `translateX(-${scrollLeft}px)`,
-            }}
-          >
-            {candidates.map((c, i) => (
-              <CandidateActionBar
-                key={c.id}
-                candidate={c}
-                decision={decisions[i]}
-                isLast={i === candidates.length - 1}
-                onDecide={(decision) => onDecide(c.id, decision)}
-              />
-            ))}
+            {/* ── NAVY SECTION ── */}
+
+            {/* Row: Photo + Name */}
+            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+              <LabelCell background={NAVY} />
+              {candidates.map((c, i) => {
+                const decision = decisions[i];
+                const isLast = i === candidates.length - 1;
+                const isMatcherPick = matcherRevealedIds.includes(c.id);
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      background: NAVY,
+                      padding: "20px 20px 16px",
+                      borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    {/* Photo */}
+                    <div className="relative mb-4">
+                      {c.photo ? (
+                        <img
+                          src={c.photo}
+                          alt={c.name}
+                          className="w-full object-cover object-top rounded"
+                          style={{ height: 160 }}
+                        />
+                      ) : (
+                        <div
+                          className="w-full rounded"
+                          style={{
+                            height: 160,
+                            background:
+                              "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+                          }}
+                        />
+                      )}
+                      {decision && (
+                        <div
+                          className="absolute flex items-center px-3 text-[12px] font-semibold leading-[18px] text-white"
+                          style={{
+                            top: 10,
+                            left: 0,
+                            paddingTop: 2,
+                            paddingBottom: 2,
+                            background: decision === "interested" ? "#03B080" : "#E53935",
+                            borderRadius: "0 20px 20px 0",
+                          }}
+                        >
+                          {decision === "interested" ? "Interested" : "Not a fit"}
+                        </div>
+                      )}
+                    </div>
+                    {/* Name + badge */}
+                    <div className="flex items-start gap-2 mb-1">
+                      <h3 className="text-white font-bold text-[17px] leading-[26px] flex-1">
+                        {c.name}
+                      </h3>
+                      <span
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold text-white shrink-0 mt-0.5"
+                        style={{ border: "1px solid rgba(255,255,255,0.5)" }}
+                      >
+                        {isMatcherPick ? "Matcher pick" : "Auto-matched"}
+                      </span>
+                    </div>
+                    <p
+                      className="text-[13px] leading-[20px]"
+                      style={{ color: "rgba(255,255,255,0.7)" }}
+                    >
+                      {c.role}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Row: Why matched */}
+            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+              <LabelCell label="Why matched" background={NAVY} />
+              {candidates.map((c, i) => {
+                const isLast = i === candidates.length - 1;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      background: NAVY,
+                      padding: "14px 20px",
+                      borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    <div className="flex flex-col gap-2">
+                      {c.reasons.map((r, j) => (
+                        <div key={j} className="flex items-start gap-2">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            className="shrink-0 mt-0.5"
+                          >
+                            <path
+                              d="M3 8h10M9 4l4 4-4 4"
+                              stroke="#03B080"
+                              strokeWidth="1.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <span className="text-[13px] leading-[20px] text-white">
+                            {r.full ? (
+                              r.full
+                            ) : (
+                              <>
+                                {r.pre}
+                                <span className="font-semibold">{r.bold}</span>
+                                {r.post}
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Row: Skills */}
+            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+              <LabelCell label="Skills" background={NAVY} />
+              {candidates.map((c, i) => {
+                const isLast = i === candidates.length - 1;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      background: NAVY,
+                      padding: "14px 20px",
+                      borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-1.5">
+                      {c.skills.map((s) => (
+                        <span
+                          key={s}
+                          className="px-3 py-1.5 rounded-xl text-[12px] font-semibold leading-[12px]"
+                          style={{ border: "1px solid #03B080", color: "#03B080" }}
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Row: Availability */}
+            <div className="flex">
+              <LabelCell label="Availability" background={NAVY} />
+              {candidates.map((c, i) => {
+                const isLast = i === candidates.length - 1;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      background: NAVY,
+                      padding: "14px 20px 20px",
+                      borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                    }}
+                  >
+                    <div
+                      className="flex flex-col gap-1 text-[12px] leading-[18px]"
+                      style={{ color: "rgba(255,255,255,0.7)" }}
+                    >
+                      <span>
+                        Can start:{" "}
+                        <span className="text-white font-medium">{c.canStart}</span>
+                      </span>
+                      <span>
+                        Availability:{" "}
+                        <span className="text-white font-medium">
+                          {c.availability.replace(/\s*\(.*\)/, "")}
+                        </span>
+                      </span>
+                      <span>{c.localTime}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── WHITE SECTION ── */}
+
+            {/* Row: About */}
+            <div className="flex" style={{ borderBottom: "1px solid #EBECED", borderTop: "1px solid #EBECED" }}>
+              <LabelCell label="About" background="white" />
+              {candidates.map((c, i) => {
+                const isLast = i === candidates.length - 1;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      padding: "14px 20px",
+                      borderRight: isLast ? "none" : "1px solid #EBECED",
+                    }}
+                  >
+                    <p className="text-[13px] leading-[20px]" style={{ color: "#455065" }}>
+                      {c.about}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Row: Experience */}
+            <div className="flex">
+              <LabelCell label="Experience" background="white" />
+              {candidates.map((c, i) => {
+                const isLast = i === candidates.length - 1;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: COLUMN_WIDTH,
+                      minWidth: COLUMN_WIDTH,
+                      padding: "14px 20px 24px",
+                      borderRight: isLast ? "none" : "1px solid #EBECED",
+                    }}
+                  >
+                    <div className="flex flex-col gap-4">
+                      {c.experience.map((exp, j) => (
+                        <div key={j}>
+                          <div className="flex items-start justify-between mb-0.5">
+                            <p className="font-semibold text-[13px] leading-[20px] text-black">
+                              {exp.title}
+                            </p>
+                            <p
+                              className="text-[12px] leading-[18px] shrink-0 ml-2"
+                              style={{ color: "#8A9099" }}
+                            >
+                              {exp.years}
+                            </p>
+                          </div>
+                          <p
+                            className="text-[13px] font-semibold mb-1.5"
+                            style={{ color: "#204ECF" }}
+                          >
+                            {exp.company}
+                          </p>
+                          <ul className="flex flex-col gap-1">
+                            {exp.bullets.map((b, k) => (
+                              <li
+                                key={k}
+                                className="flex items-start gap-2 text-[13px] leading-[20px]"
+                                style={{ color: "#455065" }}
+                              >
+                                <span
+                                  className="mt-[8px] w-1.5 h-1.5 rounded-full shrink-0"
+                                  style={{ background: "#8A9099" }}
+                                />
+                                {b}
+                              </li>
+                            ))}
+                          </ul>
+                          {j < c.experience.length - 1 && (
+                            <div
+                              className="mt-4"
+                              style={{ height: 1, background: "#EBECED" }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Action bar — sticky to the bottom of the scroll viewport; scrollbar appears below it */}
+            <div
+              className="flex"
+              style={{ position: "sticky", bottom: 0, zIndex: 20, borderTop: "1px solid #EBECED", background: "white" }}
+            >
+              <div style={{ width: LABEL_WIDTH, minWidth: LABEL_WIDTH, background: "white", borderRight: "1px solid #EBECED" }} />
+              {candidates.map((c, i) => (
+                <CandidateActionBar
+                  key={c.id}
+                  candidate={c}
+                  decision={decisions[i]}
+                  isLast={i === candidates.length - 1}
+                  onDecide={(decision) => onDecide(c.id, decision)}
+                />
+              ))}
+            </div>
+
           </div>
         </div>
       </div>
