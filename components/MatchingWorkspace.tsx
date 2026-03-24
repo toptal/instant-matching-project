@@ -32,7 +32,7 @@ type Message =
   | { id: string; type: "user-text"; content: string }
   | { id: string; type: "snippet-steps" }
   | { id: string; type: "snippet-requirements"; variant?: "initial" | "refined"; versionLabel?: string }
-  | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string }
+  | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string; matcherTriggered?: boolean }
   | { id: string; type: "interaction-options"; options: string[]; action: string }
   | { id: string; type: "matcher-joined" }
   | { id: string; type: "matcher-text"; content: string };
@@ -238,24 +238,35 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
     const afterText = delay + step.matcherText.length * TYPEWRITER_CHAR_MS + 400;
 
+    let snippetDelay = afterText;
+
+    if (step.requirementSnippet) {
+      schedule(() => {
+        const { variant, versionLabel } = requirementVariant(step.requirementSnippet!);
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), type: "snippet-requirements", variant, versionLabel },
+        ]);
+        updateJobDetails(variant, versionLabel);
+      }, snippetDelay + SNIPPET_THINK_MS);
+      snippetDelay += SNIPPET_THINK_MS + 400;
+    }
+
     if (step.talentsSnippet) {
       schedule(() => {
         const batch = revealNextBatch(3);
         setMessages((prev) => [
           ...prev,
-          { id: uid(), type: "snippet-talents", candidates: batch },
+          { id: uid(), type: "snippet-talents", candidates: batch, matcherTriggered: true },
         ]);
-      }, afterText + SNIPPET_THINK_MS);
-      schedule(() => {
-        setIsLoading(false);
-        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
-      }, afterText + SNIPPET_THINK_MS + 400);
-    } else {
-      schedule(() => {
-        setIsLoading(false);
-        if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
-      }, afterText);
+      }, snippetDelay + SNIPPET_THINK_MS);
+      snippetDelay += SNIPPET_THINK_MS + 400;
     }
+
+    schedule(() => {
+      setIsLoading(false);
+      if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
+    }, snippetDelay);
   }
 
   // Advance the matcher scenario (called when user sends a message while matcher is active)
@@ -502,7 +513,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents":
-        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} />;
+        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} onPass={handlePass} matcherTriggered={msg.matcherTriggered} />;
       case "matcher-joined":
         return (
           <div className="flex items-center gap-3 py-1">

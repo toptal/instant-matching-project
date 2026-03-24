@@ -31,9 +31,11 @@ interface Props {
   /** When set, derives candidates from the revealed pool instead of the prop. */
   viewMode?: string;
   onPass?: (candidateName: string) => void;
+  /** When true, all candidates are labelled as matcher-suggested regardless of their source field. */
+  matcherTriggered?: boolean;
 }
 
-export default function AISnippetTalents({ candidates: candidatesProp, viewMode, onPass }: Props) {
+export default function AISnippetTalents({ candidates: candidatesProp, viewMode, onPass, matcherTriggered }: Props) {
   const { candidateDecisions, setCandidateDecision, revealedCandidates } = usePhase();
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
@@ -197,12 +199,16 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                 <div
                   className="px-2 py-0.5 rounded-lg text-[12px] font-semibold leading-[18px]"
                   style={
-                    c.source === "matcher"
+                    (matcherTriggered || c.source === "matcher")
                       ? { border: "1px solid #03B080", color: "#03B080" }
                       : { border: "1px solid #6727CF", color: "#6727CF" }
                   }
                 >
-                  {c.source === "matcher" ? `Suggested by ${c.matcherName}` : c.badge}
+                  {matcherTriggered
+                    ? `Suggested by Steven`
+                    : c.source === "matcher"
+                    ? `Suggested by ${c.matcherName}`
+                    : c.badge}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
