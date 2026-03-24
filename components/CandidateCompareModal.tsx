@@ -120,10 +120,12 @@ export default function CandidateCompareModal({
     label,
     background,
     paddingTop = 14,
+    borderBottom,
   }: {
     label?: string;
     background: string;
     paddingTop?: number;
+    borderBottom?: string;
   }) {
     const isNavy = background === NAVY;
     return (
@@ -136,8 +138,9 @@ export default function CandidateCompareModal({
           zIndex: 10,
           background,
           borderRight: isNavy
-            ? "1px solid rgba(255,255,255,0.15)"
+            ? "1px solid rgba(255,255,255,0.1)"
             : "1px solid #EBECED",
+          borderBottom,
           padding: label ? `${paddingTop}px 12px 14px 16px` : 0,
           display: "flex",
           alignItems: "flex-start",
@@ -214,8 +217,8 @@ export default function CandidateCompareModal({
             {/* ── NAVY SECTION ── */}
 
             {/* Row: Photo + Name */}
-            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-              <LabelCell background={NAVY} />
+            <div className="flex">
+              <LabelCell background={NAVY} borderBottom="1px solid rgba(255,255,255,0.1)" />
               {candidates.map((c, i) => {
                 const decision = decisions[i];
                 const isLast = i === candidates.length - 1;
@@ -229,6 +232,7 @@ export default function CandidateCompareModal({
                       background: NAVY,
                       padding: "20px 20px 16px",
                       borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                      borderBottom: "1px solid rgba(255,255,255,0.1)",
                     }}
                   >
                     {/* Photo */}
@@ -290,8 +294,8 @@ export default function CandidateCompareModal({
             </div>
 
             {/* Row: Why matched */}
-            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-              <LabelCell label="Why matched" background={NAVY} />
+            <div className="flex">
+              <LabelCell label="Why matched" background={NAVY} borderBottom="1px solid rgba(255,255,255,0.1)" />
               {candidates.map((c, i) => {
                 const isLast = i === candidates.length - 1;
                 return (
@@ -303,6 +307,7 @@ export default function CandidateCompareModal({
                       background: NAVY,
                       padding: "14px 20px",
                       borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                      borderBottom: "1px solid rgba(255,255,255,0.1)",
                     }}
                   >
                     <div className="flex flex-col gap-2">
@@ -343,8 +348,8 @@ export default function CandidateCompareModal({
             </div>
 
             {/* Row: Skills */}
-            <div className="flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-              <LabelCell label="Skills" background={NAVY} />
+            <div className="flex">
+              <LabelCell label="Skills" background={NAVY} borderBottom="1px solid rgba(255,255,255,0.1)" />
               {candidates.map((c, i) => {
                 const isLast = i === candidates.length - 1;
                 return (
@@ -356,6 +361,7 @@ export default function CandidateCompareModal({
                       background: NAVY,
                       padding: "14px 20px",
                       borderRight: isLast ? "none" : "1px solid rgba(255,255,255,0.1)",
+                      borderBottom: "1px solid rgba(255,255,255,0.1)",
                     }}
                   >
                     <div className="flex flex-wrap gap-1.5">
