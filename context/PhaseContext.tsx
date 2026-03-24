@@ -38,7 +38,8 @@ interface PhaseContextValue {
   candidatesNew: boolean;
   // Candidate pool — grows as batches are revealed in the thread
   revealedCandidates: Candidate[];
-  revealNextBatch: (count: number) => Candidate[];
+  matcherRevealedIds: string[];
+  revealNextBatch: (count: number, byMatcher?: boolean) => Candidate[];
   // Decisions keyed by candidate id
   candidateDecisions: Record<string, Decision>;
   setCandidateDecision: (id: string, decision: Decision) => void;
@@ -64,6 +65,7 @@ const PhaseContext = createContext<PhaseContextValue>({
   candidatesRevealed: false,
   candidatesNew: false,
   revealedCandidates: [],
+  matcherRevealedIds: [],
   revealNextBatch: () => [],
   candidateDecisions: {},
   setCandidateDecision: () => {},
@@ -82,6 +84,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [candidatesRevealed, setCandidatesRevealed] = useState(false);
   const [candidatesNew, setCandidatesNew] = useState(false);
   const [revealedCandidates, setRevealedCandidates] = useState<Candidate[]>([]);
+  const [matcherRevealedIds, setMatcherRevealedIds] = useState<string[]>([]);
   const [candidateDecisions, setCandidateDecisions] = useState<Record<string, Decision>>({});
   const [statusHistory, setStatusHistory] = useState<Record<string, StatusHistoryEntry[]>>({});
 
@@ -109,7 +112,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
 
   /** Pull the next `count` candidates from the global pool, add them to the
    *  revealed list, and return them so the caller can embed them in a snippet. */
-  function revealNextBatch(count: number): Candidate[] {
+  function revealNextBatch(count: number, byMatcher?: boolean): Candidate[] {
     const start = nextCandidateIndex.current;
     const batch = CANDIDATES.slice(start, start + count);
     nextCandidateIndex.current += count;
@@ -117,6 +120,9 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
       setRevealedCandidates((prev) => [...prev, ...batch]);
       setCandidatesRevealed(true);
       setCandidatesNew(true);
+      if (byMatcher) {
+        setMatcherRevealedIds((prev) => [...prev, ...batch.map((c) => c.id)]);
+      }
     }
     return batch;
   }
@@ -155,6 +161,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         candidatesRevealed,
         candidatesNew,
         revealedCandidates,
+        matcherRevealedIds,
         revealNextBatch,
         candidateDecisions,
         setCandidateDecision,

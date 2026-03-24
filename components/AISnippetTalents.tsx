@@ -28,14 +28,14 @@ function SkillPill({ label }: { label: string }) {
 interface Props {
   /** The specific batch of candidates to display. Empty when viewMode is set. */
   candidates: Candidate[];
+  /** When true, all candidates in this snippet were suggested by the matcher. */
+  matcherPick?: boolean;
   /** When set, derives candidates from the revealed pool instead of the prop. */
   viewMode?: string;
   onPass?: (candidateName: string) => void;
-  /** When true, all candidates are labelled as matcher-suggested regardless of their source field. */
-  matcherTriggered?: boolean;
 }
 
-export default function AISnippetTalents({ candidates: candidatesProp, viewMode, onPass, matcherTriggered }: Props) {
+export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass }: Props) {
   const { candidateDecisions, setCandidateDecision, revealedCandidates } = usePhase();
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
@@ -197,18 +197,14 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
               <div className="flex items-center justify-between">
                 <span className="text-[13px] leading-[20px] text-black">Why this might be a fit:</span>
                 <div
-                  className="px-2 py-0.5 rounded-lg text-[12px] font-semibold leading-[18px]"
+                  className="px-2 py-0.5 rounded text-[12px] font-semibold leading-[18px]"
                   style={
-                    (matcherTriggered || c.source === "matcher")
+                    matcherPick
                       ? { border: "1px solid #03B080", color: "#03B080" }
                       : { border: "1px solid #6727CF", color: "#6727CF" }
                   }
                 >
-                  {matcherTriggered
-                    ? `Suggested by Steven`
-                    : c.source === "matcher"
-                    ? `Suggested by ${c.matcherName}`
-                    : c.badge}
+                  {matcherPick ? "Matcher pick" : "Auto-matched"}
                 </div>
               </div>
               <div className="flex flex-col gap-2">
