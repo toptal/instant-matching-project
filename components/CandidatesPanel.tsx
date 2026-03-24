@@ -197,14 +197,23 @@ export default function CandidatesPanel({ onBack }: Props) {
                     <DecisionBadge decision={decision} />
 
                     {/* Photo */}
-                    <div
-                      className="w-full rounded"
-                      style={{
-                        aspectRatio: "1",
-                        background:
-                          "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
-                      }}
-                    />
+                    {c.photo ? (
+                      <img
+                        src={c.photo}
+                        alt={c.name}
+                        className="w-full rounded object-cover object-top"
+                        style={{ aspectRatio: "1" }}
+                      />
+                    ) : (
+                      <div
+                        className="w-full rounded"
+                        style={{
+                          aspectRatio: "1",
+                          background:
+                            "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+                        }}
+                      />
+                    )}
 
                     {/* Name + role */}
                     <div>

@@ -6,6 +6,7 @@ type Decision = "interested" | "not-a-fit" | null;
 
 type Candidate = {
   name: string;
+  photo?: string;
   role: string;
   badge: string;
   reasons: { bold?: string; pre?: string; post?: string; full?: string }[];
@@ -92,7 +93,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
             <div className="flex flex-col gap-4" style={{ paddingTop: 8 }}>
               {/* Name + badge */}
               <div className="flex items-center gap-3">
-                <h2 className="text-white font-bold text-[22px] leading-[28px]">{c.name}</h2>
+                <h2 className="text-white font-bold text-[28px] leading-[42px]">{c.name}</h2>
                 <div
                   className="px-2.5 py-0.5 rounded-lg text-[12px] font-semibold leading-[18px] text-white shrink-0"
                   style={{ border: "1px solid rgba(255,255,255,0.5)" }}
@@ -170,13 +171,22 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
               </div>
             )}
             {/* Photo — 250×250, sits inside 16 px padding */}
-            <div
-              className="w-full shrink-0"
-              style={{
-                height: 250,
-                background: "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
-              }}
-            />
+            {c.photo ? (
+              <img
+                src={c.photo}
+                alt={c.name}
+                className="w-full shrink-0 object-cover object-top"
+                style={{ height: 250 }}
+              />
+            ) : (
+              <div
+                className="w-full shrink-0"
+                style={{
+                  height: 250,
+                  background: "radial-gradient(ellipse at 50% 25%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)",
+                }}
+              />
+            )}
             {/* Info */}
             <div className="flex flex-col gap-2">
               <div className="flex flex-col">
@@ -195,11 +205,11 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
           {/* White body — paddingTop accounts for the photo card overlapping from above */}
           <div className="px-8 flex flex-col gap-6" style={{ paddingTop: 85, paddingBottom: 24 }}>
             <div>
-              <h3 className="font-bold text-[18px] leading-[26px] text-black mb-3">About</h3>
+              <h2 className="font-bold text-[28px] leading-[42px] text-black mb-3">About</h2>
               <p className="text-[14px] leading-[22px]" style={{ color: "#455065" }}>{c.about}</p>
             </div>
             <div>
-              <h3 className="font-bold text-[18px] leading-[26px] text-black mb-4">Experience</h3>
+              <h2 className="font-bold text-[28px] leading-[42px] text-black mb-4">Experience</h2>
               <div className="flex flex-col gap-6">
                 {c.experience.map((exp, i) => (
                   <div key={i}>

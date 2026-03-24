@@ -157,7 +157,16 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
               style={{ background: "white", padding: 16, width: 182 }}
             >
               {/* Photo */}
-              <div className="rounded-sm overflow-hidden" style={{ width: 150, height: 150, background: "radial-gradient(ellipse at 50% 30%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)" }} />
+              {c.photo ? (
+                <img
+                  src={c.photo}
+                  alt={c.name}
+                  className="rounded-sm object-cover object-top"
+                  style={{ width: 150, height: 150 }}
+                />
+              ) : (
+                <div className="rounded-sm overflow-hidden" style={{ width: 150, height: 150, background: "radial-gradient(ellipse at 50% 30%, #c8b8ac 0%, #a8998c 50%, #907f74 100%)" }} />
+              )}
               <div>
                 <p className="font-semibold text-[16px] leading-[24px] text-black">{c.name}</p>
                 <p className="text-[14px] leading-[22px] text-black">{c.role}</p>
