@@ -292,6 +292,13 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       setIsLoading(false);
       if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
     }, snippetDelay);
+
+    // Auto-advance only when there are no user options (no interaction needed)
+    if (step.userOptions.length === 0) {
+      schedule(() => {
+        advanceMatcherScenario(undefined);
+      }, snippetDelay + fd(3000));
+    }
   }
 
   // Advance the matcher scenario (called when user sends a message while matcher is active)
