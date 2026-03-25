@@ -304,11 +304,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     if (nextStep < matcherScenario.current.length) {
       playMatcherStep(nextStep);
     } else {
-      // Scenario exhausted — matcher leaves
+      // Scenario exhausted — matcher leaves, then main scenario resumes automatically
       schedule(() => {
         setMessages((prev) => [...prev, { id: uid(), type: "matcher-left" }]);
         deactivateMatcherChat();
       }, 600);
+      schedule(() => {
+        advanceScenario();
+      }, 1800);
     }
   }
 
