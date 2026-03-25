@@ -77,43 +77,19 @@
 //                         step where Steven delivers his handpicked candidates.
 //
 // =============================================================================
-// CONVERSATION DESIGN TIPS
-// =============================================================================
-//
-// - Keep Steven's voice human: opinionated, concise, occasionally informal.
-//   He is an expert who has "done this hundreds of times" — not a chatbot.
-//
-// - The matching-stage arc: open → understand what's blocking them →
-//   identify the single must-have → deliver handpicked candidates. 5 steps
-//   is a natural length; avoid going beyond 7 or the flow feels slow.
-//
-// - The last step should always include `talentsSnippet: true` so Steven's
-//   contribution is tangible.
-//
-// - `userOptions` on the final step should be positive closers like
-//   "Thanks, Steven!" — they signal the user is done.
-//
-// =============================================================================
 
 import type { MatcherScenarioStep } from "./matcherScenario";
 
 export const MATCHER_MATCHING_SCENARIO: MatcherScenarioStep[] = [
-  // Step m1 — Steven opens with a single focused question to calibrate his picks.
-  // Chips make it easy to answer quickly — no typing required.
+  // Step m1 — Steven opens by asking about the user's perspective on candidates so far.
   {
     id: "m1",
     matcherText:
-      "Hey, Steven here. I've been watching what you're seeing and I think I can find you better fits. Quick question — what's been the main issue with the candidates so far?",
-    userOptions: [
-      "Skills aren't right",
-      "Wrong seniority level",
-      "Not enough context on them",
-      "Just want more options",
-    ],
+      "Hey, Steven here. I've been reviewing your requirements and the candidates you've seen so far. What's your perspective after going through them — anything specific you'd like to see more of?",
+    userOptions: ["More talents", "Different skills", "More senior"],
   },
 
-  // Step m2 — Steven confirms he understood and gives the user a beat
-  // to acknowledge before he delivers. Chips keep the flow moving.
+  // Step m2 — Steven confirms he understood and goes to work.
   {
     id: "m2",
     matcherText:
@@ -121,14 +97,30 @@ export const MATCHER_MATCHING_SCENARIO: MatcherScenarioStep[] = [
     userOptions: ["Sounds good", "Take your time"],
   },
 
-  // Step m3 — Payoff: Steven delivers his handpicked candidates.
+  // Step m3 — Steven delivers his handpicked candidates.
   // talentsSnippet renders a matcher-pick batch after Steven's message.
-  // Steven leaves the conversation automatically after this step.
   {
     id: "m3",
     matcherText:
       "Here are my picks. These are people I'd vouch for — I've matched similar profiles before and I'm confident they're worth your time. Have a look.",
     talentsSnippet: true,
-    userOptions: ["Thanks, Steven!", "These look promising"],
+    userOptions: [],
+  },
+
+  // Step m4 — Steven asks for feedback on his picks.
+  {
+    id: "m4",
+    matcherText:
+      "Have a look through them and let me know what you think.",
+    userOptions: ["Profiles look good"],
+  },
+
+  // Step m5 — Steven wraps up and hands off.
+  // Steven leaves the conversation automatically after this step.
+  {
+    id: "m5",
+    matcherText:
+      "Glad I could help! I'm switching off for now — feel free to continue reviewing and shortlisting. If you need me again, just let me know.",
+    userOptions: [],
   },
 ];

@@ -66,46 +66,12 @@
 //                         text as the user's response and advances to the next step.
 //                         Use [] (empty array) to show no chips — the user must
 //                         type a free-text reply to continue.
-//                         TIP: A step with no chips (like a "processing" step)
-//                         feels natural when Steven is doing something and the
-//                         user doesn't need to respond yet — but note the scenario
-//                         will still wait for any user input before advancing.
 //
 //   requirementSnippet  — Optional. If set, renders the job requirements card
-//                         immediately after Steven's message, in the specified
-//                         state. Use this when Steven updates or revisits the brief.
-//                         Available states:
-//                           "draft"         → Initial rough draft
-//                           "draft-updated" → After clarifying questions
-//                           "validation"    → Ready for user sign-off
-//                           "validated"     → User-approved version
-//                           "updated"       → Post-matcher revision (most common
-//                                             for the matcher scenario — shows
-//                                             that Steven has improved the brief)
+//                         immediately after Steven's message, in the specified state.
 //
 //   talentsSnippet      — Optional. Set to `true` to render a candidate list card
-//                         immediately after Steven's message (and after the
-//                         requirement snippet if both are set). The candidates
-//                         shown are the latest matcher-suggested batch that Steven
-//                         has surfaced. Use this on the final step where Steven
-//                         delivers his recommended candidates.
-//
-// =============================================================================
-// CONVERSATION DESIGN TIPS
-// =============================================================================
-//
-// - Keep Steven's voice human: opinionated, concise, occasionally informal.
-//   He is an expert who has "done this hundreds of times" — not a chatbot.
-//
-// - A typical arc: open → 2–3 clarifying questions → acknowledgement →
-//   deliver results (requirementSnippet + talentsSnippet). 5 steps is a
-//   natural length; avoid going beyond 7 or the flow feels slow.
-//
-// - The last step should always include `talentsSnippet: true` and/or
-//   `requirementSnippet: "updated"` so Steven's contribution is tangible.
-//
-// - `userOptions` on the final step should be positive closers like
-//   "Thanks, Steven!" or "Looks good" — they signal the user is done.
+//                         immediately after Steven's message.
 //
 // =============================================================================
 
@@ -119,18 +85,14 @@ export type MatcherScenarioStep = {
 
 export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
   // Step m1 — Steven introduces himself and asks permission to help.
-  // Always the opening step. Short and friendly — gives the user an easy
-  // out ("I'm good for now") so they don't feel forced into the conversation.
   {
     id: "m1",
     matcherText:
       "Hey! This is Steven. I've been keeping an eye on your progress here and I think I can help you get a bit more precise about what you need. Want to run through a few quick questions?",
-    userOptions: ["Sure, let's do it", "I'm good for now, thanks"],
+    userOptions: ["Sure, let's do it"],
   },
 
   // Step m2 — First clarifying question: runtime/technology specifics.
-  // Steven digs into technical nuance the AI might have glossed over.
-  // Three chips cover the main answers without being exhaustive.
   {
     id: "m2",
     matcherText:
@@ -139,8 +101,6 @@ export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
   },
 
   // Step m3 — Second clarifying question: project context.
-  // This shapes whether Steven prioritises legacy-code experience or
-  // startup/greenfield candidates. No snippet yet — Steven is still gathering.
   {
     id: "m3",
     matcherText:
@@ -148,10 +108,7 @@ export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
     userOptions: ["Existing codebase", "Greenfield project", "Mix of both"],
   },
 
-  // Step m4 — Steven acknowledges and says he'll go refine the requirements.
-  // No chips (empty userOptions) — this is a "hold on while I work" moment.
-  // The user must type any message to advance, but in practice Steven moves
-  // quickly so the next step (m5) plays almost immediately after.
+  // Step m4 — Steven acknowledges and says he'll refine the requirements.
   {
     id: "m4",
     matcherText:
@@ -159,15 +116,29 @@ export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
     userOptions: [],
   },
 
-  // Step m5 — Steven delivers the updated requirements card only.
-  // No candidates here — this scenario is purely about sharpening the brief.
-  // Chips are positive closers — the conversation wraps up after this step
-  // and Steven leaves the conversation automatically.
+  // Step m5 — Steven delivers the updated requirements card.
   {
     id: "m5",
     matcherText:
-      "Done. I've tightened up the requirements based on what you told me — have a look. Once you're happy with it, the AI will use this to find you much better matches.",
+      "Done. I've tightened up the requirements based on what you told me — have a look. Once you're happy with it, this will be used to find you much better matches.",
     requirementSnippet: "updated",
-    userOptions: ["Thanks, Steven!", "Looks good"],
+    userOptions: [],
+  },
+
+  // Step m6 — Steven asks for confirmation.
+  {
+    id: "m6",
+    matcherText:
+      "What do you think — does that look closer to what you had in mind?",
+    userOptions: ["Looks good"],
+  },
+
+  // Step m7 — Steven hands off and leaves.
+  // Steven leaves the conversation automatically after this step.
+  {
+    id: "m7",
+    matcherText:
+      "Great, glad that helped. Everything is updated — let me switch you back to the next steps where you'll be able to see the first matches based on the refined requirements.",
+    userOptions: [],
   },
 ];
