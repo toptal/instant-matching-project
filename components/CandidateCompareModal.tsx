@@ -84,7 +84,7 @@ function CandidateActionBar({
       )}
       <div className="flex gap-2">
         <button
-          className="flex-1 py-2 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer"
+          className="flex-1 py-2 rounded text-[13px] font-semibold transition-colors cursor-pointer"
           style={{
             border: "1px solid #EBECED",
             color: decision === "not-a-fit" ? "#8A9099" : "#455065",
@@ -97,7 +97,7 @@ function CandidateActionBar({
         <div className="relative flex-1 group">
           <button
             disabled={!scheduleInterviewEnabled}
-            className="w-full py-2 rounded-lg text-[13px] font-semibold text-white"
+            className="w-full py-2 rounded text-[13px] font-semibold text-white"
             style={{
               background: "#204ECF",
               opacity: scheduleInterviewEnabled ? 1 : 0.5,
