@@ -15,6 +15,7 @@ import { getActiveScenario } from "@/utils/scenarioStorage";
 import { getActiveMatcherScenario } from "@/utils/matcherScenarioStorage";
 import { getActiveMatcherMatchingScenario } from "@/utils/matcherMatchingScenarioStorage";
 import type { MatcherScenarioStep } from "@/data/matcherScenario";
+import { isFastMode, fd } from "@/utils/fastMode";
 
 
 type Message =
@@ -33,15 +34,17 @@ type Message =
 function TypewriterText({
   text,
   threadRef,
+  charDelay = 15,
   className = "text-[14px] leading-[22px]",
   style = { color: "#455065" },
 }: {
   text: string;
   threadRef: React.RefObject<HTMLDivElement | null>;
+  charDelay?: number;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => charDelay === 0 ? text.length : 0);
 
   useEffect(() => {
     if (count >= text.length) return;
@@ -50,9 +53,9 @@ function TypewriterText({
       if (threadRef.current) {
         threadRef.current.scrollTop = threadRef.current.scrollHeight;
       }
-    }, 15);
+    }, charDelay);
     return () => clearTimeout(t);
-  }, [count, text, threadRef]);
+  }, [count, text, threadRef, charDelay]);
 
   const visible = text.slice(0, count);
   const paras = visible.split("\n\n");
@@ -116,10 +119,10 @@ function uid() {
 }
 
 // Must match the setTimeout delay inside TypewriterText
-const TYPEWRITER_CHAR_MS = 15;
+const TYPEWRITER_CHAR_MS = fd(15);
 
 // How long the thinking dots show before a snippet card appears
-const SNIPPET_THINK_MS = 1400;
+const SNIPPET_THINK_MS = fd(1400);
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
@@ -203,10 +206,10 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       const t1 = setTimeout(() => {
         setMessages((prev) => [...prev, { id: uid(), type: "matcher-joined" }]);
         setMatcherJoining(false);
-      }, 1500);
+      }, fd(1500));
       const t2 = setTimeout(() => {
         playMatcherStep(0);
-      }, 2200);
+      }, fd(2200));
       pendingTimeouts.current.push(t1, t2);
     } else if (!matcherChatActive) {
       // Reset so the next activation (e.g. matching scenario after requirements) fires correctly.
@@ -256,7 +259,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     setActiveOptions(null);
     setIsLoading(true);
 
-    const delay = 800;
+    const delay = fd(800);
     schedule(() => {
       appendMatcherText(step.matcherText);
     }, delay);
@@ -391,7 +394,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     for (const item of step.items) {
       if (item.kind === "message") {
         hasContent = true;
-        delay += 900;
+        delay += fd(900);
         const d = delay;
         const isHeading = item.style === "heading";
         schedule(() => (isHeading ? appendAIHeading(item.text) : appendAIText(item.text)), d);
@@ -407,7 +410,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         lastResponseOptions = item.options;
       } else if (item.kind === "tooltip") {
         const t = item;
-        const d = delay + 400;
+        const d = delay + fd(400);
         schedule(() => triggerTooltip({
           content: t.content,
           primaryLabel: t.primaryLabel,
@@ -423,7 +426,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     schedule(() => {
       setIsLoading(false);
       if (opts) setActiveOptions(opts);
-    }, delay + 400);
+    }, delay + fd(400));
   }
 
   // Advance to the next scenario step, optionally posting a user message first
@@ -472,7 +475,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         );
       }
       setIsLoading(false);
-    }, 700);
+    }, fd(700));
   }
 
   // User sends a free-form message → advance scenario (or matcher scenario if active)
@@ -502,6 +505,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
             <TypewriterText
               text={msg.content}
               threadRef={threadRef}
+              charDelay={TYPEWRITER_CHAR_MS}
               className="font-semibold text-[20px] leading-[30px]"
               style={{ color: "#455065" }}
             />
@@ -516,7 +520,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "ai-text": {
         const animate = animatedIds.current.has(msg.id) && typeof msg.content === "string";
         if (animate) {
-          return <TypewriterText text={msg.content as string} threadRef={threadRef} />;
+          return <TypewriterText text={msg.content as string} threadRef={threadRef} charDelay={TYPEWRITER_CHAR_MS} />;
         }
         if (typeof msg.content === "string") {
           const paras = msg.content.split("\n\n");
@@ -617,6 +621,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
                 <TypewriterText
                   text={msg.content}
                   threadRef={threadRef}
+                  charDelay={TYPEWRITER_CHAR_MS}
                   className="text-[14px] leading-[22px]"
                   style={{ color: "#1a3a2e" }}
                 />
