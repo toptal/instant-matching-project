@@ -465,7 +465,7 @@ export default function CandidatesPanel({ onBack }: Props) {
             candidates={compareCandidates}
             decisions={compareCandidates.map((c) => candidateDecisions[c.id] ?? null)}
             matcherRevealedIds={matcherRevealedIds}
-            onClose={() => setCompareOpen(false)}
+            onClose={() => { setCompareOpen(false); setSelectedIds([]); }}
             onDecide={(id, decision) => setCandidateDecision(id, decision)}
             onRemove={(id) => {
               setSelectedIds((prev) => {
