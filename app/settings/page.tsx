@@ -14,6 +14,29 @@ import {
   getActiveScenarioId,
 } from "@/utils/scenarioStorage";
 import type { StoredScenario } from "@/utils/scenarioStorage";
+import {
+  parseMatcherScenarioTS,
+  addMatcherScenario,
+  removeMatcherScenario,
+  loadMatcherScenarios,
+  setActiveMatcherScenarioId,
+  clearActiveMatcherScenario,
+  getActiveMatcherScenarioId,
+} from "@/utils/matcherScenarioStorage";
+import type { StoredMatcherScenario } from "@/utils/matcherScenarioStorage";
+import { SCENARIO as DEFAULT_SCENARIO } from "@/data/scenario";
+import { MATCHER_SCENARIO as DEFAULT_MATCHER_SCENARIO } from "@/data/matcherScenario";
+
+function downloadAsTS(filename: string, exportName: string, data: unknown) {
+  const content = `export const ${exportName} = ${JSON.stringify(data, null, 2)};\n`;
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function Toggle({
   checked,
@@ -177,14 +200,14 @@ function ScenarioSection() {
 
   return (
     <Card>
-      <SectionHeader>Scenario</SectionHeader>
+      <SectionHeader>Main Scenario</SectionHeader>
 
       <div className="py-4 flex flex-col gap-3">
         {/* Header row */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
             <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a2e" }}>
-              Custom scenarios
+              Custom main scenarios
             </span>
             <span style={{ fontSize: 13, color: "#84888e", lineHeight: "18px" }}>
               {scenarios.length === 0
@@ -195,13 +218,22 @@ function ScenarioSection() {
             </span>
           </div>
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg px-3 py-1.5 text-[13px] font-semibold cursor-pointer shrink-0"
-            style={{ background: "#204ECF", color: "#fff" }}
-          >
-            Upload scenario
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => downloadAsTS("default-scenario.ts", "SCENARIO", DEFAULT_SCENARIO)}
+              className="rounded-lg px-3 py-1.5 text-[13px] font-semibold cursor-pointer"
+              style={{ background: "#EBECED", color: "#455065" }}
+            >
+              Download default
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-lg px-3 py-1.5 text-[13px] font-semibold cursor-pointer"
+              style={{ background: "#204ECF", color: "#fff" }}
+            >
+              Upload scenario
+            </button>
+          </div>
         </div>
 
         {/* Feedback messages */}
@@ -222,7 +254,7 @@ function ScenarioSection() {
             {/* Default row */}
             <div
               className="flex items-center justify-between gap-3 px-3 py-2.5"
-              style={{ borderBottom: scenarios.length > 0 ? "1px solid #EBECED" : undefined, background: !activeId ? "#F3F4F6" : "#fff" }}
+              style={{ borderBottom: "1px solid #EBECED", background: !activeId ? "#F3F4F6" : "#fff" }}
             >
               <div className="flex items-center gap-2 min-w-0">
                 {!activeId && (
@@ -237,15 +269,17 @@ function ScenarioSection() {
                   Default
                 </span>
               </div>
-              {activeId && (
-                <button
-                  onClick={handleUseDefault}
-                  className="shrink-0 rounded-md px-2 py-1 text-[12px] font-medium cursor-pointer"
-                  style={{ background: "#EBECED", color: "#455065" }}
-                >
-                  Use
-                </button>
-              )}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {activeId && (
+                  <button
+                    onClick={handleUseDefault}
+                    className="shrink-0 rounded-md px-2 py-1 text-[12px] font-medium cursor-pointer"
+                    style={{ background: "#EBECED", color: "#455065" }}
+                  >
+                    Use
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Uploaded scenarios */}
@@ -320,6 +354,223 @@ function ScenarioSection() {
   );
 }
 
+// ── Matcher scenario upload section ──────────────────────────────────────────
+
+function MatcherScenarioSection() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [scenarios, setScenarios] = useState<StoredMatcherScenario[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadedName, setUploadedName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setScenarios(loadMatcherScenarios());
+    setActiveId(getActiveMatcherScenarioId());
+  }, []);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploadedName(null);
+
+    const name = file.name.replace(/\.[^.]+$/, "");
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const content = ev.target?.result as string;
+        const steps = parseMatcherScenarioTS(content);
+        const entry = addMatcherScenario(name, steps);
+        setScenarios(loadMatcherScenarios());
+        setUploadedName(name);
+        setActiveMatcherScenarioId(entry.id);
+        setActiveId(entry.id);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to parse file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  function handleActivate(id: string) {
+    setActiveMatcherScenarioId(id);
+    setActiveId(id);
+    setUploadedName(null);
+  }
+
+  function handleDelete(id: string) {
+    removeMatcherScenario(id);
+    const updated = loadMatcherScenarios();
+    setScenarios(updated);
+    if (activeId === id) {
+      setActiveId(null);
+    }
+  }
+
+  function handleUseDefault() {
+    clearActiveMatcherScenario();
+    setActiveId(null);
+    setUploadedName(null);
+  }
+
+  return (
+    <Card>
+      <SectionHeader>Matcher Scenario</SectionHeader>
+
+      <div className="py-4 flex flex-col gap-3">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            <span style={{ fontWeight: 600, fontSize: 14, color: "#1a1a2e" }}>
+              Custom matcher scenarios
+            </span>
+            <span style={{ fontSize: 13, color: "#84888e", lineHeight: "18px" }}>
+              {scenarios.length === 0
+                ? "No matcher scenarios uploaded. Using the built-in default."
+                : activeId
+                ? "Reload the workspace to apply changes."
+                : "No custom matcher scenario active — using built-in default."}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => downloadAsTS("default-matcher-scenario.ts", "MATCHER_SCENARIO", DEFAULT_MATCHER_SCENARIO)}
+              className="rounded-lg px-3 py-1.5 text-[13px] font-semibold cursor-pointer"
+              style={{ background: "#EBECED", color: "#455065" }}
+            >
+              Download default
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-lg px-3 py-1.5 text-[13px] font-semibold cursor-pointer"
+              style={{ background: "#204ECF", color: "#fff" }}
+            >
+              Upload scenario
+            </button>
+          </div>
+        </div>
+
+        {/* Feedback messages */}
+        {uploadedName && (
+          <p style={{ fontSize: 13, color: "#03B080", margin: 0 }}>
+            &ldquo;{uploadedName}&rdquo; uploaded and activated. Reload the workspace to apply it.
+          </p>
+        )}
+        {error && (
+          <p style={{ fontSize: 13, color: "#E53935", margin: 0 }}>
+            {error}
+          </p>
+        )}
+
+        {/* Scenario list */}
+        {scenarios.length > 0 && (
+          <div className="flex flex-col" style={{ border: "1px solid #EBECED", borderRadius: 8, overflow: "hidden" }}>
+            {/* Default row */}
+            <div
+              className="flex items-center justify-between gap-3 px-3 py-2.5"
+              style={{ borderBottom: "1px solid #EBECED", background: !activeId ? "#F3F4F6" : "#fff" }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                {!activeId && (
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    style={{ background: "#204ECF", color: "#fff" }}
+                  >
+                    Active
+                  </span>
+                )}
+                <span style={{ fontSize: 13, color: "#1a1a2e", fontWeight: !activeId ? 600 : 400 }}>
+                  Default
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {activeId && (
+                  <button
+                    onClick={handleUseDefault}
+                    className="shrink-0 rounded-md px-2 py-1 text-[12px] font-medium cursor-pointer"
+                    style={{ background: "#EBECED", color: "#455065" }}
+                  >
+                    Use
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Uploaded scenarios */}
+            {scenarios.map((s, idx) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between gap-3 px-3 py-2.5"
+                style={{
+                  borderBottom: idx < scenarios.length - 1 ? "1px solid #EBECED" : undefined,
+                  background: activeId === s.id ? "#F3F4F6" : "#fff",
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {activeId === s.id && (
+                    <span
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                      style={{ background: "#204ECF", color: "#fff" }}
+                    >
+                      Active
+                    </span>
+                  )}
+                  <span
+                    className="truncate"
+                    style={{ fontSize: 13, color: "#1a1a2e", fontWeight: activeId === s.id ? 600 : 400 }}
+                    title={s.name}
+                  >
+                    {s.name}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#9EA8B3", whiteSpace: "nowrap" }}>
+                    {s.steps.length} step{s.steps.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {activeId !== s.id && (
+                    <button
+                      onClick={() => handleActivate(s.id)}
+                      className="rounded-md px-2 py-1 text-[12px] font-medium cursor-pointer"
+                      style={{ background: "#EBECED", color: "#455065" }}
+                    >
+                      Use
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="rounded-md px-2 py-1 text-[12px] font-medium cursor-pointer"
+                    style={{ background: "#FEE2E2", color: "#E53935" }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Format hint */}
+        <p style={{ fontSize: 12, color: "#9EA8B3", margin: 0, lineHeight: "18px" }}>
+          Upload any <code style={{ fontFamily: "monospace" }}>.ts</code> file
+          that exports a <code style={{ fontFamily: "monospace" }}>const</code> array
+          of matcher scenario steps. The filename is used as the scenario name.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".ts"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+    </Card>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -371,6 +622,9 @@ export default function SettingsPage() {
 
         {/* Scenario card */}
         <ScenarioSection />
+
+        {/* Matcher scenario card */}
+        <MatcherScenarioSection />
       </div>
     </div>
   );
