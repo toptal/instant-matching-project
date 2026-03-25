@@ -162,6 +162,9 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const requirementTooltipShownRef = useRef(false);
   // Condition tracking — only-one-interested tooltip
   const singleInterestedTooltipShownRef = useRef(false);
+  // Condition tracking — only one interested after second auto-matched snippet
+  const autoMatchedSnippetCountRef = useRef(0);
+  const secondSnippetInterestedTooltipShownRef = useRef(false);
 
   useEffect(() => {
     if (threadRef.current) {
@@ -169,9 +172,27 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     }
   }, [messages]);
 
+  // Condition: only one interested after a second auto-matched talent snippet is shown
+  useEffect(() => {
+    if (secondSnippetInterestedTooltipShownRef.current) return;
+    if (autoMatchedSnippetCountRef.current < 2) return;
+    const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
+    const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
+    if (interested.length !== 1) return;
+    secondSnippetInterestedTooltipShownRef.current = true;
+    triggerTooltip({
+      content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
+      primaryLabel: "Yes, join in",
+      secondaryLabel: "Not now",
+      onPrimary: () => activateMatcherChat("matching"),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidateDecisions, revealedCandidates, matcherRevealedIds]);
+
   // Condition: only one auto-matched candidate marked as interested
   useEffect(() => {
     if (singleInterestedTooltipShownRef.current) return;
+    if (autoMatchedSnippetCountRef.current < 2) return;
     const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
     if (autoMatched.length < 2) return;
     const decided = autoMatched.filter((c) => candidateDecisions[c.id] != null);
@@ -362,6 +383,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         } else {
           // New batch — pull next 3 candidates from the pool.
           const batch = revealNextBatch(3);
+          autoMatchedSnippetCountRef.current += 1;
           setMessages((prev) => [
             ...prev,
             { id: uid(), type: "snippet-talents", candidates: batch },
