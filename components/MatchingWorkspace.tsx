@@ -16,17 +16,6 @@ import { getActiveMatcherScenario } from "@/utils/matcherScenarioStorage";
 import { getActiveMatcherMatchingScenario } from "@/utils/matcherMatchingScenarioStorage";
 import type { MatcherScenarioStep } from "@/data/matcherScenario";
 
-const TOOLTIP_KEYWORDS = [
-  "requirements",
-  "matcher",
-  "help",
-  "adjust",
-  "refine",
-  "struggling",
-  "not sure",
-  "unsure",
-  "change",
-];
 
 type Message =
   | { id: string; type: "ai-heading"; content: string }
@@ -354,9 +343,9 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         if (requirementSnippetCountRef.current === 3 && !requirementTooltipShownRef.current) {
           requirementTooltipShownRef.current = true;
           setTimeout(() => triggerTooltip({
-            content: "You've been refining your requirements a few times. Would you like to work through them together with Steven?",
-            primaryLabel: "Yes, let's review",
-            secondaryLabel: "I'll handle myself",
+            content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
+            primaryLabel: "Yes, join in",
+            secondaryLabel: "Not now",
             onPrimary: () => activateMatcherChat("requirements"),
           }), 800);
         }
@@ -440,16 +429,6 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
     if (userText) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
-      const lower = userText.toLowerCase();
-      if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
-        const tooltipType = activePhase >= 3 ? "matching" : "requirements";
-        triggerTooltip({
-          content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
-          primaryLabel: "Yes, join in",
-          secondaryLabel: "Not now",
-          onPrimary: () => activateMatcherChat(tooltipType),
-        });
-      }
     }
 
     playScenarioStep(currentStepRef.current + 1);

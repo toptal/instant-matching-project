@@ -175,32 +175,34 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
               </div>
               {decision ? (
                 <div className="flex flex-col gap-2">
-                  {/* Disabled primary button with hover tooltip */}
-                  <div className="relative group">
-                    <button
-                      disabled
-                      className="w-full py-2 rounded text-[13px] font-semibold text-white"
-                      style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
-                    >
-                      Schedule Interview
-                    </button>
-                    <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                      style={{ background: "#1a1a2e" }}
-                    >
-                      We are confirming talent availability
+                  {/* Disabled primary button with hover tooltip — only for interested */}
+                  {decision === "interested" && (
+                    <div className="relative group">
+                      <button
+                        disabled
+                        className="w-full py-2 rounded text-[13px] font-semibold text-white"
+                        style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
+                      >
+                        Schedule Interview
+                      </button>
                       <div
-                        className="absolute top-full left-1/2 -translate-x-1/2"
-                        style={{
-                          width: 0,
-                          height: 0,
-                          borderLeft: "5px solid transparent",
-                          borderRight: "5px solid transparent",
-                          borderTop: "5px solid #1a1a2e",
-                        }}
-                      />
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        style={{ background: "#1a1a2e" }}
+                      >
+                        We are confirming talent availability
+                        <div
+                          className="absolute top-full left-1/2 -translate-x-1/2"
+                          style={{
+                            width: 0,
+                            height: 0,
+                            borderLeft: "5px solid transparent",
+                            borderRight: "5px solid transparent",
+                            borderTop: "5px solid #1a1a2e",
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {/* Secondary button */}
                   <button
                     className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
