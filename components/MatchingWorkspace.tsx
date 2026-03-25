@@ -163,11 +163,11 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   // Condition tracking — how many times RequirementSnippet has appeared
   const requirementSnippetCountRef = useRef(0);
   const requirementTooltipShownRef = useRef(false);
-  // Condition tracking — only-one-interested tooltip
-  const singleInterestedTooltipShownRef = useRef(false);
-  // Condition tracking — only one interested after second auto-matched snippet
+  // Condition tracking — interested-candidates tooltip after second auto-matched snippet
   const autoMatchedSnippetCountRef = useRef(0);
-  const secondSnippetInterestedTooltipShownRef = useRef(false);
+  const interestedTooltipShownRef = useRef(false);
+  // Tracks whether the second auto-matched TalentsSnippet modal has been dismissed
+  const [secondSnippetDismissed, setSecondSnippetDismissed] = useState(false);
 
   useEffect(() => {
     if (threadRef.current) {
@@ -175,46 +175,22 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     }
   }, [messages]);
 
-  // Condition: only one interested after a second auto-matched talent snippet is shown
+  // Condition: fewer than 3 auto-matched candidates marked as interested after second snippet is dismissed
   useEffect(() => {
-    if (secondSnippetInterestedTooltipShownRef.current) return;
-    if (autoMatchedSnippetCountRef.current < 2) return;
+    if (interestedTooltipShownRef.current) return;
+    if (!secondSnippetDismissed) return;
     const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
     const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
-    if (interested.length !== 1) return;
-    secondSnippetInterestedTooltipShownRef.current = true;
+    if (interested.length >= 3) return;
+    interestedTooltipShownRef.current = true;
     triggerTooltip({
-      content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
-      primaryLabel: "Yes, join in",
+      content: "Want a second opinion? A matcher can step in, review what's caught your eye, and recommend better candidates.",
+      primaryLabel: "Yes, get help",
       secondaryLabel: "Not now",
       onPrimary: () => activateMatcherChat("matching"),
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidateDecisions, revealedCandidates, matcherRevealedIds]);
-
-  // Condition: only one auto-matched candidate marked as interested
-  useEffect(() => {
-    if (singleInterestedTooltipShownRef.current) return;
-    if (autoMatchedSnippetCountRef.current < 2) return;
-    const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
-    if (autoMatched.length < 2) return;
-    const decided = autoMatched.filter((c) => candidateDecisions[c.id] != null);
-    if (decided.length < 2) return;
-    const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
-    const allDecided = autoMatched.every((c) => candidateDecisions[c.id] != null);
-    const noneInterested = allDecided && interested.length === 0;
-    const onlyOneInterested = interested.length === 1;
-    if (noneInterested || onlyOneInterested) {
-      singleInterestedTooltipShownRef.current = true;
-      triggerTooltip({
-        content: "I notice only one candidate has caught your eye so far. Would you like me to find better matches based on your reactions?",
-        primaryLabel: "Yes, find better matches",
-        secondaryLabel: "No thanks",
-        onPrimary: () => activateMatcherChat("matching"),
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidateDecisions, revealedCandidates, matcherRevealedIds]);
+  }, [candidateDecisions, revealedCandidates, matcherRevealedIds, secondSnippetDismissed]);
 
   // Trigger matcher joining sequence when matcherChatActive flips to true
   useEffect(() => {
@@ -592,6 +568,9 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         const lastTalentId = [...messages].reverse().find((m) => m.type === "snippet-talents")?.id;
         const isLast = !msg.viewMode && msg.id === lastTalentId;
         const handleDismiss = isLast ? () => {
+          if (autoMatchedSnippetCountRef.current >= 2) {
+            setSecondSnippetDismissed(true);
+          }
           schedule(() => advanceScenario(), 800);
         } : undefined;
         return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} matcherPick={msg.matcherPick} onPass={handlePass} onDismiss={handleDismiss} />;
