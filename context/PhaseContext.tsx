@@ -26,6 +26,7 @@ interface PhaseContextValue {
   // Matcher chat
   matcherChatActive: boolean;
   activateMatcherChat: () => void;
+  deactivateMatcherChat: () => void;
   // Job Details — live state synced from thread snippets
   jdVariant: "initial" | "refined" | null;
   jdVersionLabel: string | null;
@@ -56,6 +57,7 @@ const PhaseContext = createContext<PhaseContextValue>({
   triggerMatcherTooltip: () => {},
   matcherChatActive: false,
   activateMatcherChat: () => {},
+  deactivateMatcherChat: () => {},
   jdVariant: null,
   jdVersionLabel: null,
   jdHistory: [],
@@ -97,6 +99,10 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
 
   function activateMatcherChat() {
     setMatcherChatActive(true);
+  }
+
+  function deactivateMatcherChat() {
+    setMatcherChatActive(false);
   }
 
   function updateJobDetails(variant: "initial" | "refined", versionLabel: string) {
@@ -152,6 +158,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         triggerMatcherTooltip,
         matcherChatActive,
         activateMatcherChat,
+        deactivateMatcherChat,
         jdVariant,
         jdVersionLabel,
         jdHistory,
