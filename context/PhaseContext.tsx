@@ -58,6 +58,9 @@ interface PhaseContextValue {
   interestedCount: number;
   // Status history per candidate id
   statusHistory: Record<string, StatusHistoryEntry[]>;
+  // Whether the Schedule Interview button should be enabled
+  scheduleInterviewEnabled: boolean;
+  enableScheduleInterview: () => void;
 }
 
 const PhaseContext = createContext<PhaseContextValue>({
@@ -86,6 +89,8 @@ const PhaseContext = createContext<PhaseContextValue>({
   setCandidateDecision: () => {},
   interestedCount: 0,
   statusHistory: {},
+  scheduleInterviewEnabled: false,
+  enableScheduleInterview: () => {},
 });
 
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
@@ -103,6 +108,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [matcherRevealedIds, setMatcherRevealedIds] = useState<string[]>([]);
   const [candidateDecisions, setCandidateDecisions] = useState<Record<string, Decision>>({});
   const [statusHistory, setStatusHistory] = useState<Record<string, StatusHistoryEntry[]>>({});
+  const [scheduleInterviewEnabled, setScheduleInterviewEnabled] = useState(false);
 
   // Mutable pointer — not state — so revealNextBatch reads current value synchronously.
   const nextCandidateIndex = useRef(0);
@@ -195,6 +201,8 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         setCandidateDecision,
         interestedCount,
         statusHistory,
+        scheduleInterviewEnabled,
+        enableScheduleInterview: () => setScheduleInterviewEnabled(true),
       }}
     >
       {children}

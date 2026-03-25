@@ -126,7 +126,7 @@ const SNIPPET_THINK_MS = fd(1400);
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, activePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, matcherScenarioType, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds } = usePhase();
+  const { setActivePhase, activePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, matcherScenarioType, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds, enableScheduleInterview } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
@@ -366,6 +366,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "TalentsSnippet": {
         if (snippet.view_mode) {
           // Shortlist / interviewed view — show already-revealed candidates, filtered in component.
+          enableScheduleInterview();
           setMessages((prev) => [
             ...prev,
             { id: uid(), type: "snippet-talents", candidates: [], viewMode: snippet.view_mode },
