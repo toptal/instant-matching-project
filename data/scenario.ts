@@ -1,15 +1,122 @@
-// ---------------------------------------------------------------------------
-// Scenario Script — Pre-Matching Simulation
+// =============================================================================
+// MAIN SCENARIO — AI Matching Workspace Conversation Script
+// =============================================================================
 //
-// This file is the single source of truth for the conversation simulation.
-// The engine in MatchingWorkspace reads these steps in order and plays them
-// back using the existing UI mechanics (message thread, snippets, chips).
+// WHAT THIS FILE IS
+// -----------------
+// This file defines the full scripted conversation that plays out in the
+// matching workspace chat thread. It is the single source of truth for what
+// the AI assistant says, what UI components it injects, and what quick-reply
+// options the user sees at each point in the flow.
 //
-// Each step has `items` which are one of:
-//   { kind: "message" }   — AI system message shown in the thread
-//   { kind: "snippet" }   — UI component injected into the thread
-//   { kind: "responses" } — Quick-reply chips pinned above the input
-// ---------------------------------------------------------------------------
+// The engine in `components/MatchingWorkspace.tsx` reads this array in order,
+// one step at a time, and plays each step back when the user responds.
+//
+// HOW TO CUSTOMISE
+// ----------------
+// To create a custom scenario, download this file from Settings → Main Scenario
+// → "Download default", edit it, then upload it back. The uploaded file must:
+//   - Be a .ts file
+//   - Export a single `const` array (the name does not matter)
+//   - Each element must be a valid ScenarioStep (see type definitions below)
+//
+// HOW STEPS WORK
+// --------------
+// The scenario is an array of ScenarioStep objects. Each step plays in full
+// before waiting for the user to respond. Steps advance sequentially — step N
+// plays after the user sends any message while step N-1 is active.
+//
+// Within a step, `items` are rendered top-to-bottom in the chat thread:
+//   1. All messages and snippets appear automatically (with typing animation).
+//   2. The last `responses` item (if present) pins quick-reply chips above
+//      the input box. Clicking a chip sends that text as a user message.
+//   3. If there is no `responses` item, the free-text input is available.
+//
+// =============================================================================
+// TYPE REFERENCE
+// =============================================================================
+//
+// ── ScenarioStep ──────────────────────────────────────────────────────────────
+//
+//   { id: string; items: ScenarioItem[] }
+//
+//   id    — Unique identifier for this step (e.g. "1.1", "2.3"). Used only for
+//           readability; the engine plays steps by array position, not by id.
+//   items — Ordered list of things to show when this step plays. Can mix
+//           messages, snippets, and responses in any order, but only one
+//           `responses` item per step is meaningful (the last one wins).
+//
+// ── ScenarioItem ──────────────────────────────────────────────────────────────
+//
+//   Three kinds, each with a different `kind` discriminant:
+//
+//   1. { kind: "message"; text: string; style?: "heading" | "text" }
+//      Renders a chat bubble from the AI assistant.
+//      - text    — The message body. Supports \n for line breaks.
+//      - style   — Optional visual style:
+//                    "heading" → larger, bolder text (use for titles/openers)
+//                    "text"    → default prose style (also the default if omitted)
+//
+//   2. { kind: "snippet"; snippet: SnippetItem }
+//      Injects an interactive UI card into the chat thread.
+//      See SnippetItem below for the available card types.
+//
+//   3. { kind: "responses"; options: string[] }
+//      Pins quick-reply chips above the input box.
+//      - options — Array of strings shown as clickable chips. Clicking one
+//                  sends that text as the user's message and advances the step.
+//                  Use an empty array [] to show no chips (free text only).
+//
+// ── SnippetItem ───────────────────────────────────────────────────────────────
+//
+//   Three card types, each with a different `type` discriminant:
+//
+//   1. { type: "StepsSnippet"; activeStage: number }
+//      Renders the stage progress bar (the horizontal stepper UI).
+//      - activeStage — Which stage to highlight as current (1–6).
+//                      Stage labels: 1=Intro, 2=Draft, 3=Validate,
+//                      4=Matching, 5=Interviewing, 6=Hire.
+//      TIP: Place one of these at the start of each new stage to orient
+//      the user about where they are in the process.
+//
+//   2. { type: "RequirementSnippet"; state: "draft" | "draft-updated" | "validation" | "validated" | "updated" }
+//      Renders the job requirements card (the structured job brief panel).
+//      - state — Controls which version/visual state of the requirements to show:
+//                  "draft"         → First rough draft, shown early in stage 2
+//                  "draft-updated" → Draft refined after clarifying questions
+//                  "validation"    → Presented for user sign-off in stage 3
+//                  "validated"     → After user approves / makes changes
+//                  "updated"       → Post-matcher revision (used in stage 4+)
+//      TIP: Showing the same requirement card multiple times with different
+//      states communicates progression — the brief is getting sharper.
+//
+//   3. { type: "TalentsSnippet"; source?: "auto-matched" | "matcher-suggested"; view_mode?: "history" | "shortlist-only" | "interviewed" }
+//      Renders the candidate list card with swipeable candidate profiles.
+//      - source      — Optionally tags who surfaced these candidates:
+//                        "auto-matched"       → System-matched (default look)
+//                        "matcher-suggested"  → Flagged by Steven (shown with
+//                                               green "Matcher pick" badge)
+//                        omit                 → No source tag
+//      - view_mode   — Controls which candidates are shown:
+//                        "history"         → All revealed candidates so far
+//                        "shortlist-only"  → Only candidates marked Interested
+//                        "interviewed"     → Only candidates who were invited
+//                        omit              → Shows the latest batch revealed
+//      TIP: Use "shortlist-only" in the interview stage so the user sees
+//      only the people they actually want to meet.
+//
+// =============================================================================
+// STAGE OVERVIEW
+// =============================================================================
+//
+//  Stage 1 — Intro          Welcome, explain the workspace, get role input
+//  Stage 2 — Draft          Turn role input into a structured job brief
+//  Stage 3 — Validate       User reviews and signs off on the brief
+//  Stage 4 — Matching       Surface and react to matched candidates
+//  Stage 5 — Interviewing   Schedule interviews with shortlisted candidates
+//  Stage 6 — Hire           Final decision and closing
+//
+// =============================================================================
 
 export type SnippetItem =
   | { type: "StepsSnippet"; activeStage: number }
@@ -39,6 +146,9 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 1.1 — Welcome
+  // The opening message. Uses "heading" style for the title, then a longer
+  // prose message explaining the workspace. Chips give the user three ways
+  // to start describing the role they need to fill.
   {
     id: "1.1",
     items: [
@@ -56,6 +166,9 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 2.1 — Stage Transition
+  // Acknowledges the user's role description, shows the stage progress bar
+  // at stage 2, then shows the first draft of the job requirements card.
+  // Ends without chips so the AI can ask the first clarifying question next.
   {
     id: "2.1",
     items: [
@@ -78,6 +191,9 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 2.2 — Clarifying Question: Timezone
+  // Short question with three option chips. Each chip sends a user message
+  // that advances to the next step. The actual chip text is not acted on
+  // by the engine — all responses advance equally.
   {
     id: "2.2",
     items: [
@@ -114,6 +230,8 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 2.5 — Draft Updated
+  // Shows the updated requirements card (state: "draft-updated") after the
+  // clarifying questions. Offers chips to either proceed or keep refining.
   {
     id: "2.5",
     items: [
@@ -135,6 +253,9 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 3.1 — Stage Transition
+  // Advances the stage indicator to 3 and presents the requirements card in
+  // "validation" state (final review). Chips let the user approve, edit, or
+  // ask for the matcher's input.
   {
     id: "3.1",
     items: [
@@ -150,6 +271,8 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 3.2 — User Refines
+  // Plays after the user says something needs changing. Shows the "validated"
+  // requirements state (edits applied) and asks if they're ready to match.
   {
     id: "3.2",
     items: [
@@ -161,6 +284,9 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 3.3 — Matcher Offer (Contextual)
+  // An optional branch that surfaces the human matcher (Steven) as an option
+  // before starting the automated matching. Both chips advance the scenario —
+  // "Loop in Steven" triggers the matcher chat flow via a separate mechanism.
   {
     id: "3.3",
     items: [
@@ -177,6 +303,9 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 4.1 — Stage Transition
+  // Advances stage indicator to 4 and shows the first batch of auto-matched
+  // candidates (source: "auto-matched"). Chips let the user ask for more,
+  // refine before seeing more, or bring in the matcher.
   {
     id: "4.1",
     items: [
@@ -196,6 +325,8 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 4.2 — System Reacts to Feedback
+  // A short acknowledgement step that plays after the user reacts to the
+  // first batch of candidates. No snippet or chips — just a bridging message.
   {
     id: "4.2",
     items: [
@@ -207,6 +338,9 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 4.4 — Matcher Adds Candidates
+  // Steven (the human matcher) surfaces additional candidates he handpicked.
+  // These are shown with source: "matcher-suggested" which renders them with
+  // a green "Matcher pick" badge so they stand out visually.
   {
     id: "4.4",
     items: [
@@ -220,6 +354,9 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 4.5 — Shortlist Confirmation
+  // Plays after the user has marked some candidates as Interested. Confirms
+  // the shortlist is being saved and availability is being checked, then
+  // offers to move to interviews or keep browsing.
   {
     id: "4.5",
     items: [
@@ -236,6 +373,8 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 5.1 — Stage Transition
+  // Advances stage indicator to 5 and shows only the shortlisted candidates
+  // (view_mode: "shortlist-only") so the user can choose who to invite.
   {
     id: "5.1",
     items: [
@@ -251,6 +390,8 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 5.2 — Invitations Sent
+  // Confirms invitations have been dispatched and offers preparation options
+  // while the user waits for candidates to respond.
   {
     id: "5.2",
     items: [
@@ -267,6 +408,8 @@ export const SCENARIO: ScenarioStep[] = [
   // -------------------------------------------------------------------------
 
   // Step 6.1 — Stage Transition
+  // Final stage. Shows stage indicator at 6 and the "interviewed" view of
+  // candidates (only those who were invited to interview) for the hire decision.
   {
     id: "6.1",
     items: [
@@ -279,6 +422,8 @@ export const SCENARIO: ScenarioStep[] = [
   },
 
   // Step 6.2 — Closing
+  // The final message. No chips — the scenario ends here. The emoji is
+  // intentional; this is a celebratory closing moment.
   {
     id: "6.2",
     items: [
