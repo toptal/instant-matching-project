@@ -588,8 +588,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         return <AISnippetSteps />;
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
-      case "snippet-talents":
-        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} matcherPick={msg.matcherPick} onPass={handlePass} />;
+      case "snippet-talents": {
+        const lastTalentId = [...messages].reverse().find((m) => m.type === "snippet-talents")?.id;
+        const isLast = !msg.viewMode && msg.id === lastTalentId;
+        const handleDismiss = isLast ? () => {
+          schedule(() => advanceScenario(), 800);
+        } : undefined;
+        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} matcherPick={msg.matcherPick} onPass={handlePass} onDismiss={handleDismiss} />;
+      }
       case "matcher-joined":
         return (
           <div className="flex items-center gap-3 py-1">

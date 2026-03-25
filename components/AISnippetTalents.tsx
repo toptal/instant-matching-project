@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import CandidateModal from "./CandidateModal";
 import type { Candidate } from "@/data/candidates";
 import { usePhase } from "@/context/PhaseContext";
@@ -33,12 +33,22 @@ interface Props {
   /** When set, derives candidates from the revealed pool instead of the prop. */
   viewMode?: string;
   onPass?: (candidateName: string) => void;
+  /** Called when the review modal is dismissed (closed by user or after all candidates decided). */
+  onDismiss?: () => void;
 }
 
-export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass }: Props) {
+export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass, onDismiss }: Props) {
   const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds } = usePhase();
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
+  const prevModalIndex = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevModalIndex.current !== null && modalIndex === null) {
+      onDismiss?.();
+    }
+    prevModalIndex.current = modalIndex;
+  }, [modalIndex, onDismiss]);
 
   // For view_mode snippets (shortlist / interviewed), show the revealed pool filtered
   // to interested candidates; fall back to the full revealed list if none decided yet.
