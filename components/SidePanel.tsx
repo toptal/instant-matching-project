@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import MatcherCard from "./MatcherCard";
 import NavRow from "./NavRow";
 import MatcherTooltip from "./MatcherTooltip";
@@ -15,13 +15,8 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive, activateMatcherChat } = usePhase();
+  const { tooltipConfig, dismissTooltip, activateMatcherChat, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  useEffect(() => {
-    if (tooltipTriggerCount > 0) setShowTooltip(true);
-  }, [tooltipTriggerCount]);
 
   function openJobDetails() {
     markJobDetailsViewed();
@@ -37,15 +32,18 @@ export default function SidePanel() {
 
   return (
     <div className="relative h-full">
-      {/* Matcher tooltip — floats to the left of the sidebar */}
-      {showTooltip && (
+      {/* Tooltip — floats to the left of the sidebar */}
+      {tooltipConfig && (
         <div
           className="absolute z-20"
           style={{ right: "calc(100% + 0px)", top: 180 }}
         >
           <MatcherTooltip
-            onDismiss={() => setShowTooltip(false)}
-            onAccept={() => setShowTooltip(false)}
+            content={tooltipConfig.content}
+            primaryLabel={tooltipConfig.primaryLabel}
+            secondaryLabel={tooltipConfig.secondaryLabel}
+            onPrimary={() => { tooltipConfig.onPrimary?.(); dismissTooltip(); }}
+            onSecondary={dismissTooltip}
           />
         </div>
       )}

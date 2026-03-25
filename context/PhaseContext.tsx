@@ -17,12 +17,22 @@ export type StatusHistoryEntry = { decision: Decision; timestamp: Date };
 
 export type JdHistoryEntry = { variant: "initial" | "refined"; versionLabel: string };
 
+export type TooltipConfig = {
+  content: string;
+  primaryLabel: string;
+  secondaryLabel: string;
+  /** Optional callback when the primary button is clicked (before dismiss). */
+  onPrimary?: () => void;
+};
+
 interface PhaseContextValue {
   activePhase: number;
   phaseLabel: string;
   setActivePhase: (n: number) => void;
-  tooltipTriggerCount: number;
-  triggerMatcherTooltip: () => void;
+  // Tooltip
+  tooltipConfig: TooltipConfig | null;
+  triggerTooltip: (config: TooltipConfig) => void;
+  dismissTooltip: () => void;
   // Matcher chat
   matcherChatActive: boolean;
   activateMatcherChat: () => void;
@@ -53,8 +63,9 @@ const PhaseContext = createContext<PhaseContextValue>({
   activePhase: 1,
   phaseLabel: "Draft Requirements",
   setActivePhase: () => {},
-  tooltipTriggerCount: 0,
-  triggerMatcherTooltip: () => {},
+  tooltipConfig: null,
+  triggerTooltip: () => {},
+  dismissTooltip: () => {},
   matcherChatActive: false,
   activateMatcherChat: () => {},
   deactivateMatcherChat: () => {},
@@ -77,7 +88,7 @@ const PhaseContext = createContext<PhaseContextValue>({
 
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
-  const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
+  const [tooltipConfig, setTooltipConfig] = useState<TooltipConfig | null>(null);
   const [matcherChatActive, setMatcherChatActive] = useState(false);
   const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
@@ -93,8 +104,12 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   // Mutable pointer — not state — so revealNextBatch reads current value synchronously.
   const nextCandidateIndex = useRef(0);
 
-  function triggerMatcherTooltip() {
-    setTooltipTriggerCount((n) => n + 1);
+  function triggerTooltip(config: TooltipConfig) {
+    setTooltipConfig(config);
+  }
+
+  function dismissTooltip() {
+    setTooltipConfig(null);
   }
 
   function activateMatcherChat() {
@@ -154,8 +169,9 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         activePhase,
         phaseLabel: PHASE_LABELS[activePhase],
         setActivePhase,
-        tooltipTriggerCount,
-        triggerMatcherTooltip,
+        tooltipConfig,
+        triggerTooltip,
+        dismissTooltip,
         matcherChatActive,
         activateMatcherChat,
         deactivateMatcherChat,

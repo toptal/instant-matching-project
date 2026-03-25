@@ -132,7 +132,7 @@ const SNIPPET_THINK_MS = 1400;
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch, matcherChatActive, deactivateMatcherChat } = usePhase();
+  const { setActivePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
@@ -166,12 +166,36 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const [matcherJoining, setMatcherJoining] = useState(false);
   const matcherStepRef = useRef(0);
   const prevMatcherChatActive = useRef(false);
+  // Condition tracking — how many times RequirementSnippet has appeared
+  const requirementSnippetCountRef = useRef(0);
+  const requirementTooltipShownRef = useRef(false);
+  // Condition tracking — only-one-interested tooltip
+  const singleInterestedTooltipShownRef = useRef(false);
 
   useEffect(() => {
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Condition: only one auto-matched candidate marked as interested
+  useEffect(() => {
+    if (singleInterestedTooltipShownRef.current) return;
+    const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
+    if (autoMatched.length < 2) return;
+    const decided = autoMatched.filter((c) => candidateDecisions[c.id] != null);
+    if (decided.length < 2) return;
+    const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
+    if (interested.length === 1) {
+      singleInterestedTooltipShownRef.current = true;
+      triggerTooltip({
+        content: "I notice only one candidate has caught your eye so far. Would you like me to find better matches based on your reactions?",
+        primaryLabel: "Yes, find better matches",
+        secondaryLabel: "No thanks",
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidateDecisions, revealedCandidates, matcherRevealedIds]);
 
   // Trigger matcher joining sequence when matcherChatActive flips to true
   useEffect(() => {
@@ -316,6 +340,16 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
           { id: uid(), type: "snippet-requirements", variant, versionLabel },
         ]);
         updateJobDetails(variant, versionLabel);
+        requirementSnippetCountRef.current += 1;
+        if (requirementSnippetCountRef.current === 2 && !requirementTooltipShownRef.current) {
+          requirementTooltipShownRef.current = true;
+          setTimeout(() => triggerTooltip({
+            content: "You've been refining your requirements a few times. Would you like to work through them together with Steven?",
+            primaryLabel: "Yes, let's review",
+            secondaryLabel: "I'll handle myself",
+            onPrimary: activateMatcherChat,
+          }), 800);
+        }
         break;
       }
 
@@ -369,6 +403,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         schedule(() => addSnippetToThread(s), d);
       } else if (item.kind === "responses") {
         lastResponseOptions = item.options;
+      } else if (item.kind === "tooltip") {
+        const t = item;
+        const d = delay + 400;
+        schedule(() => triggerTooltip({
+          content: t.content,
+          primaryLabel: t.primaryLabel,
+          secondaryLabel: t.secondaryLabel,
+        }), d);
       }
     }
 
@@ -389,7 +431,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     if (userText) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
       const lower = userText.toLowerCase();
-      if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) triggerMatcherTooltip();
+      if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
+        triggerTooltip({
+          content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
+          primaryLabel: "Yes, join in",
+          secondaryLabel: "Not now",
+          onPrimary: activateMatcherChat,
+        });
+      }
     }
 
     playScenarioStep(currentStepRef.current + 1);
