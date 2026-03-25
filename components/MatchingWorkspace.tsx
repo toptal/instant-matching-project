@@ -186,7 +186,10 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     const decided = autoMatched.filter((c) => candidateDecisions[c.id] != null);
     if (decided.length < 2) return;
     const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
-    if (interested.length === 1) {
+    const allDecided = autoMatched.every((c) => candidateDecisions[c.id] != null);
+    const noneInterested = allDecided && interested.length === 0;
+    const onlyOneInterested = interested.length === 1;
+    if (noneInterested || onlyOneInterested) {
       singleInterestedTooltipShownRef.current = true;
       triggerTooltip({
         content: "I notice only one candidate has caught your eye so far. Would you like me to find better matches based on your reactions?",
@@ -341,7 +344,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         ]);
         updateJobDetails(variant, versionLabel);
         requirementSnippetCountRef.current += 1;
-        if (requirementSnippetCountRef.current === 2 && !requirementTooltipShownRef.current) {
+        if (requirementSnippetCountRef.current === 3 && !requirementTooltipShownRef.current) {
           requirementTooltipShownRef.current = true;
           setTimeout(() => triggerTooltip({
             content: "You've been refining your requirements a few times. Would you like to work through them together with Steven?",
