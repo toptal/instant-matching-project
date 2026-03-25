@@ -148,28 +148,26 @@ export const MATCHER_SCENARIO: MatcherScenarioStep[] = [
     userOptions: ["Existing codebase", "Greenfield project", "Mix of both"],
   },
 
-  // Step m4 — Steven acknowledges and says he'll go work on it.
+  // Step m4 — Steven acknowledges and says he'll go refine the requirements.
   // No chips (empty userOptions) — this is a "hold on while I work" moment.
   // The user must type any message to advance, but in practice Steven moves
   // quickly so the next step (m5) plays almost immediately after.
   {
     id: "m4",
     matcherText:
-      "Perfect — really helpful context. I'll refine your requirements based on this and push a couple of additional candidates your way that I think will be a strong fit. Give me a little bit.",
+      "Perfect — really helpful context. I'll refine your requirements based on this. Give me a moment.",
     userOptions: [],
   },
 
-  // Step m5 — Steven delivers his results.
-  // This is the payoff step: an updated requirements card AND a new batch of
-  // matcher-suggested candidates. Both snippets render after the message text.
+  // Step m5 — Steven delivers the updated requirements card only.
+  // No candidates here — this scenario is purely about sharpening the brief.
   // Chips are positive closers — the conversation wraps up after this step
   // and Steven leaves the conversation automatically.
   {
     id: "m5",
     matcherText:
-      "Done. I've updated the requirements and added a few candidates I'm confident about — have a look below. Feel free to keep going on your end and I'll check back in if I spot anything else worth flagging.",
+      "Done. I've tightened up the requirements based on what you told me — have a look. Once you're happy with it, the AI will use this to find you much better matches.",
     requirementSnippet: "updated",
-    talentsSnippet: true,
     userOptions: ["Thanks, Steven!", "Looks good"],
   },
 ];

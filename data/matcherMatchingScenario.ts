@@ -98,62 +98,37 @@
 import type { MatcherScenarioStep } from "./matcherScenario";
 
 export const MATCHER_MATCHING_SCENARIO: MatcherScenarioStep[] = [
-  // Step m1 — Steven introduces himself in the matching context and asks if
-  // the user wants help reviewing the candidates that have been revealed.
-  // Short and friendly — gives the user an easy out so they don't feel forced.
+  // Step m1 — Steven opens with a single focused question to calibrate his picks.
+  // Chips make it easy to answer quickly — no typing required.
   {
     id: "m1",
     matcherText:
-      "Hey, it's Steven. I can see you've got some candidates to look through — I know this part can be tricky. Want me to walk through them with you and share my take?",
-    userOptions: ["Sure, let's do it", "I'm good for now, thanks"],
+      "Hey, Steven here. I've been watching what you're seeing and I think I can find you better fits. Quick question — what's been the main issue with the candidates so far?",
+    userOptions: [
+      "Skills aren't right",
+      "Wrong seniority level",
+      "Not enough context on them",
+      "Just want more options",
+    ],
   },
 
-  // Step m2 — Steven asks what's been making the user pass on candidates.
-  // Understanding the pattern of passes helps him surface better matches.
+  // Step m2 — Steven confirms he understood and gives the user a beat
+  // to acknowledge before he delivers. Chips keep the flow moving.
   {
     id: "m2",
     matcherText:
-      "Good. Before I pull my own picks, tell me — what's been making you pass on people so far? Even a rough sense helps me a lot.",
-    userOptions: [
-      "Skills aren't quite right",
-      "Experience level is off",
-      "Not enough context on them",
-      "Just being thorough",
-    ],
+      "Got it. I know exactly what to look for. I'm going to go through my network right now and pull the people I'd personally put in front of you.",
+    userOptions: ["Sounds good", "Take your time"],
   },
 
-  // Step m3 — Steven asks for the single most critical requirement.
-  // Forcing prioritisation helps him focus rather than optimise for everything.
+  // Step m3 — Payoff: Steven delivers his handpicked candidates.
+  // talentsSnippet renders a matcher-pick batch after Steven's message.
+  // Steven leaves the conversation automatically after this step.
   {
     id: "m3",
     matcherText:
-      "Got it. If you had to pick just one thing — the single thing a candidate absolutely has to have — what would it be?",
-    userOptions: [
-      "Deep technical expertise",
-      "Strong communication",
-      "Startup experience",
-      "Domain knowledge",
-    ],
-  },
-
-  // Step m4 — Steven acknowledges and says he'll go pull his own picks.
-  // No chips (empty userOptions) — this is a "hold on while I work" moment.
-  {
-    id: "m4",
-    matcherText:
-      "That's exactly what I needed to hear. I'll pull my own picks based on what you've told me — give me a sec.",
-    userOptions: [],
-  },
-
-  // Step m5 — Steven delivers his handpicked candidates.
-  // This is the payoff step: a fresh batch of matcher-suggested candidates.
-  // Chips are positive closers — the conversation wraps up after this step
-  // and Steven leaves the conversation automatically.
-  {
-    id: "m5",
-    matcherText:
-      "Here you go — these are my handpicked candidates based on what you've shared. I'm confident about these ones. Have a look and let me know if any stand out.",
+      "Here are my picks. These are people I'd vouch for — I've matched similar profiles before and I'm confident they're worth your time. Have a look.",
     talentsSnippet: true,
-    userOptions: ["Thanks, Steven!", "These look great"],
+    userOptions: ["Thanks, Steven!", "These look promising"],
   },
 ];

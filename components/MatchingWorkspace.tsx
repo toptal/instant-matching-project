@@ -219,6 +219,9 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         playMatcherStep(0);
       }, 2200);
       pendingTimeouts.current.push(t1, t2);
+    } else if (!matcherChatActive) {
+      // Reset so the next activation (e.g. matching scenario after requirements) fires correctly.
+      prevMatcherChatActive.current = false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matcherChatActive, matcherScenarioType]);
