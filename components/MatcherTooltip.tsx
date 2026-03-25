@@ -36,14 +36,14 @@ export default function MatcherTooltip({ content, primaryLabel, secondaryLabel, 
         <div className="flex gap-2">
           <button
             onClick={onSecondary}
-            className="flex-1 text-[13px] font-semibold py-1.5 rounded-lg"
+            className="flex-1 text-[13px] font-semibold py-1.5 rounded"
             style={{ border: "1.5px solid #EBECED", color: "#455065", background: "#fff" }}
           >
             {secondaryLabel}
           </button>
           <button
             onClick={onPrimary}
-            className="flex-1 text-[13px] font-semibold py-1.5 rounded-lg text-white"
+            className="flex-1 text-[13px] font-semibold py-1.5 rounded text-white"
             style={{ background: "#204ECF" }}
           >
             {primaryLabel}

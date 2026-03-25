@@ -375,7 +375,7 @@ export default function CandidatesPanel({ onBack }: Props) {
         </div>
         <button
           onClick={() => selectedIds.length >= 2 && setCompareOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[13px] font-semibold transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1 rounded text-[13px] font-semibold transition-colors"
           style={{
             background: selectedIds.length >= 2 ? "#204ECF" : "#F3F4F6",
             color: selectedIds.length >= 2 ? "white" : "#9EA8B3",
