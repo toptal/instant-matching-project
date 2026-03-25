@@ -35,6 +35,7 @@ type Message =
   | { id: string; type: "snippet-talents"; candidates: Candidate[]; viewMode?: string; matcherPick?: boolean }
   | { id: string; type: "interaction-options"; options: string[]; action: string }
   | { id: string; type: "matcher-joined" }
+  | { id: string; type: "matcher-left" }
   | { id: string; type: "matcher-text"; content: string };
 
 // Character-by-character typewriter for dynamically-appended AI messages
@@ -131,7 +132,7 @@ const SNIPPET_THINK_MS = 1400;
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch, matcherChatActive } = usePhase();
+  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch, matcherChatActive, deactivateMatcherChat } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
@@ -278,6 +279,12 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     const nextStep = matcherStepRef.current + 1;
     if (nextStep < MATCHER_SCENARIO.length) {
       playMatcherStep(nextStep);
+    } else {
+      // Scenario exhausted — matcher leaves
+      schedule(() => {
+        setMessages((prev) => [...prev, { id: uid(), type: "matcher-left" }]);
+        deactivateMatcherChat();
+      }, 600);
     }
   }
 
@@ -531,6 +538,25 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
               </span>
             </div>
             <div style={{ flex: 1, height: 1, background: "#E8F8F2" }} />
+          </div>
+        );
+      case "matcher-left":
+        return (
+          <div className="flex items-center gap-3 py-1">
+            <div style={{ flex: 1, height: 1, background: "#EBECED" }} />
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: "#84888E" }}
+              />
+              <span
+                className="text-[12px] font-semibold"
+                style={{ color: "#84888E" }}
+              >
+                Steven Kovacel left the conversation
+              </span>
+            </div>
+            <div style={{ flex: 1, height: 1, background: "#EBECED" }} />
           </div>
         );
       case "matcher-text": {
