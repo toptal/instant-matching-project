@@ -274,11 +274,6 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
       </div>
 
-      {allDecided && (
-        <p className="text-[13px] text-center w-full mt-3" style={{ color: "#455065" }}>
-          All candidates reviewed. Your feedback has been sent.
-        </p>
-      )}
 
       {/* Modal */}
       {modalIndex !== null && (
