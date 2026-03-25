@@ -12,7 +12,7 @@ import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 import type { SnippetItem } from "@/data/scenario";
 import type { Candidate } from "@/data/candidates";
 import { getActiveScenario } from "@/utils/scenarioStorage";
-import { MATCHER_SCENARIO } from "@/data/matcherScenario";
+import { getActiveMatcherScenario } from "@/utils/matcherScenarioStorage";
 
 const TOOLTIP_KEYWORDS = [
   "requirements",
@@ -136,6 +136,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
+  const matcherScenario = useRef(getActiveMatcherScenario());
 
   // When arriving from the welcome screen, pre-populate step 0 messages and the
   // user's own message as static content so they're never re-appended by effects.
@@ -225,8 +226,8 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // Play a step from the matcher scenario
   function playMatcherStep(stepIndex: number) {
-    if (stepIndex >= MATCHER_SCENARIO.length) return;
-    const step = MATCHER_SCENARIO[stepIndex];
+    if (stepIndex >= matcherScenario.current.length) return;
+    const step = matcherScenario.current[stepIndex];
     matcherStepRef.current = stepIndex;
 
     setActiveOptions(null);
@@ -277,7 +278,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
     }
     const nextStep = matcherStepRef.current + 1;
-    if (nextStep < MATCHER_SCENARIO.length) {
+    if (nextStep < matcherScenario.current.length) {
       playMatcherStep(nextStep);
     } else {
       // Scenario exhausted — matcher leaves
