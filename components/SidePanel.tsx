@@ -36,7 +36,7 @@ export default function SidePanel() {
       {tooltipConfig && (
         <div
           className="absolute z-20"
-          style={{ right: "calc(100% + 0px)", top: 180 }}
+          style={{ right: "calc(100% - 24px)", top: 178 }}
         >
           <MatcherTooltip
             content={tooltipConfig.content}
