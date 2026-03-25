@@ -38,7 +38,8 @@ interface Props {
 }
 
 export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass, onDismiss }: Props) {
-  const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds } = usePhase();
+  const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds, scheduleInterviewEnabled } = usePhase();
+  const scheduleEnabled = scheduleInterviewEnabled;
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
   const prevModalIndex = useRef<number | null>(null);
@@ -189,28 +190,30 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                   {decision === "interested" && (
                     <div className="relative group">
                       <button
-                        disabled
+                        disabled={!scheduleEnabled}
                         className="w-full py-2 rounded text-[13px] font-semibold text-white"
-                        style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
+                        style={{ background: "#204ECF", opacity: scheduleEnabled ? 1 : 0.5, cursor: scheduleEnabled ? "pointer" : "default" }}
                       >
                         Schedule Interview
                       </button>
-                      <div
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                        style={{ background: "#1a1a2e" }}
-                      >
-                        We are confirming talent availability
+                      {!scheduleEnabled && (
                         <div
-                          className="absolute top-full left-1/2 -translate-x-1/2"
-                          style={{
-                            width: 0,
-                            height: 0,
-                            borderLeft: "5px solid transparent",
-                            borderRight: "5px solid transparent",
-                            borderTop: "5px solid #1a1a2e",
-                          }}
-                        />
-                      </div>
+                          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                          style={{ background: "#1a1a2e" }}
+                        >
+                          We are confirming talent availability
+                          <div
+                            className="absolute top-full left-1/2 -translate-x-1/2"
+                            style={{
+                              width: 0,
+                              height: 0,
+                              borderLeft: "5px solid transparent",
+                              borderRight: "5px solid transparent",
+                              borderTop: "5px solid #1a1a2e",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   {/* Secondary button */}
@@ -287,6 +290,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
           onClose={() => setModalIndex(null)}
           onDecide={handleDecide}
           onNavigate={setModalIndex}
+          scheduleEnabled={scheduleEnabled}
         />
       )}
     </>
