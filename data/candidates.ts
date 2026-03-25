@@ -8,7 +8,7 @@ export type Candidate = {
   badge: string;
   source: "system" | "matcher";
   matcherName?: string;
-  reasons: Array<{ pre?: string; bold: string; post?: string }>;
+  reasons: Array<{ full?: string; pre?: string; bold: string; post?: string }>;
   skills: string[];
   canStart: string;
   availability: string;
