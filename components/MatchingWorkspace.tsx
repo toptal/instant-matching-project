@@ -564,8 +564,8 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
       case "snippet-talents": {
-        const lastTalentId = [...messages].reverse().find((m) => m.type === "snippet-talents")?.id;
-        const isLast = !msg.viewMode && msg.id === lastTalentId;
+        const lastTalentId = [...messages].reverse().find((m) => m.type === "snippet-talents" && !m.matcherPick)?.id;
+        const isLast = !msg.viewMode && !msg.matcherPick && msg.id === lastTalentId;
         const handleDismiss = isLast ? () => {
           if (autoMatchedSnippetCountRef.current >= 2) {
             setSecondSnippetDismissed(true);

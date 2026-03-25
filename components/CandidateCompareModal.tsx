@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Candidate, Decision } from "@/data/candidates";
+import { usePhase } from "@/context/PhaseContext";
 
 type Props = {
   candidates: Candidate[];
@@ -25,7 +26,6 @@ const LABEL_WIDTH = 116;
 const NAVY = "#1B2D72";
 
 function CandidateActionBar({
-  candidate,
   decision,
   isLast,
   onDecide,
@@ -35,6 +35,7 @@ function CandidateActionBar({
   isLast: boolean;
   onDecide: (decision: Decision) => void;
 }) {
+  const { scheduleInterviewEnabled } = usePhase();
   const [showReasons, setShowReasons] = useState(false);
 
   function handleNotAFit() {
@@ -87,23 +88,37 @@ function CandidateActionBar({
           style={{
             border: "1px solid #EBECED",
             color: decision === "not-a-fit" ? "#8A9099" : "#455065",
-            background:
-              decision === "not-a-fit" ? "#F3F4F6" : showReasons ? "#F3F4F6" : "white",
+            background: decision === "not-a-fit" ? "#F3F4F6" : showReasons ? "#F3F4F6" : "white",
           }}
           onClick={handleNotAFit}
         >
           {decision === "not-a-fit" ? "✗ Not a Fit" : "Not a Fit"}
         </button>
-        <button
-          className="flex-1 py-2 rounded-lg text-[13px] font-semibold text-white transition-colors cursor-pointer"
-          style={{ background: decision === "interested" ? "#027a56" : "#03B080" }}
-          onClick={() => {
-            setShowReasons(false);
-            onDecide("interested");
-          }}
-        >
-          {decision === "interested" ? "✓ Interested" : "Interested"}
-        </button>
+        <div className="relative flex-1 group">
+          <button
+            disabled={!scheduleInterviewEnabled}
+            className="w-full py-2 rounded-lg text-[13px] font-semibold text-white"
+            style={{
+              background: "#204ECF",
+              opacity: scheduleInterviewEnabled ? 1 : 0.5,
+              cursor: scheduleInterviewEnabled ? "pointer" : "default",
+            }}
+          >
+            Schedule Interview
+          </button>
+          {!scheduleInterviewEnabled && (
+            <div
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
+              style={{ background: "#1a1a2e" }}
+            >
+              We are confirming talent availability
+              <div
+                className="absolute top-full left-1/2 -translate-x-1/2"
+                style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

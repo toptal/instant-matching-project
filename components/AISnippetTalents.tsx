@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import CandidateModal from "./CandidateModal";
+import CandidateCompareModal from "./CandidateCompareModal";
 import type { Candidate } from "@/data/candidates";
 import { usePhase } from "@/context/PhaseContext";
 
@@ -43,6 +44,8 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
   const prevModalIndex = useRef<number | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareList, setCompareList] = useState<Candidate[]>([]);
 
   useEffect(() => {
     if (prevModalIndex.current !== null && modalIndex === null) {
@@ -220,9 +223,16 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
                   <button
                     className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
                     style={{ border: "1px solid #EBECED", color: "#455065", background: "white" }}
-                    onClick={() => setModalIndex(displayIndex)}
+                    onClick={() => {
+                      if (viewMode) {
+                        setCompareList(candidates);
+                        setShowCompare(true);
+                      } else {
+                        setModalIndex(displayIndex);
+                      }
+                    }}
                   >
-                    More Details
+                    {viewMode ? "Compare Talents" : "More Details"}
                   </button>
                 </div>
               ) : (
@@ -278,7 +288,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
       </div>
 
 
-      {/* Modal */}
+      {/* Detail modal */}
       {modalIndex !== null && (
         <CandidateModal
           candidates={candidates.map(c => ({
@@ -291,6 +301,18 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
           onDecide={handleDecide}
           onNavigate={setModalIndex}
           scheduleEnabled={scheduleEnabled}
+        />
+      )}
+
+      {/* Compare modal — viewMode shortlist */}
+      {showCompare && (
+        <CandidateCompareModal
+          candidates={compareList}
+          decisions={compareList.map((c) => candidateDecisions[c.id] ?? null)}
+          matcherRevealedIds={matcherRevealedIds}
+          onClose={() => setShowCompare(false)}
+          onDecide={(id, decision) => setCandidateDecision(id, decision)}
+          onRemove={(id) => setCompareList((prev) => prev.filter((c) => c.id !== id))}
         />
       )}
     </>
