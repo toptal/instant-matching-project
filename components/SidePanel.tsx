@@ -16,7 +16,7 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipConfig, dismissTooltip, triggerTooltip, activateMatcherChat, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
+  const { tooltipConfig, dismissTooltip, triggerTooltip, activateMatcherChat, activePhase, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
   const pendingTooltipRef = useRef<TooltipConfig | null>(null);
   const pendingTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,7 +109,7 @@ export default function SidePanel() {
             </div>
             <Separator />
             <div className="p-5 shrink-0">
-              <MatcherCard onChatClick={matcherChatActive ? undefined : activateMatcherChat} />
+              <MatcherCard onChatClick={matcherChatActive ? undefined : () => activateMatcherChat(activePhase >= 3 ? "matching" : "requirements")} />
             </div>
             <Separator />
             <div className="flex flex-col">

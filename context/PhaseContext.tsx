@@ -35,7 +35,8 @@ interface PhaseContextValue {
   dismissTooltip: () => void;
   // Matcher chat
   matcherChatActive: boolean;
-  activateMatcherChat: () => void;
+  matcherScenarioType: "requirements" | "matching";
+  activateMatcherChat: (type?: "requirements" | "matching") => void;
   deactivateMatcherChat: () => void;
   // Job Details — live state synced from thread snippets
   jdVariant: "initial" | "refined" | null;
@@ -67,6 +68,7 @@ const PhaseContext = createContext<PhaseContextValue>({
   triggerTooltip: () => {},
   dismissTooltip: () => {},
   matcherChatActive: false,
+  matcherScenarioType: "requirements",
   activateMatcherChat: () => {},
   deactivateMatcherChat: () => {},
   jdVariant: null,
@@ -90,6 +92,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
   const [tooltipConfig, setTooltipConfig] = useState<TooltipConfig | null>(null);
   const [matcherChatActive, setMatcherChatActive] = useState(false);
+  const [matcherScenarioType, setMatcherScenarioType] = useState<"requirements" | "matching">("requirements");
   const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jdHistory, setJdHistory] = useState<JdHistoryEntry[]>([]);
@@ -112,7 +115,8 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
     setTooltipConfig(null);
   }
 
-  function activateMatcherChat() {
+  function activateMatcherChat(type: "requirements" | "matching" = "requirements") {
+    setMatcherScenarioType(type);
     setMatcherChatActive(true);
   }
 
@@ -173,6 +177,7 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         triggerTooltip,
         dismissTooltip,
         matcherChatActive,
+        matcherScenarioType,
         activateMatcherChat,
         deactivateMatcherChat,
         jdVariant,

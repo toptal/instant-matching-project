@@ -13,6 +13,8 @@ import type { SnippetItem } from "@/data/scenario";
 import type { Candidate } from "@/data/candidates";
 import { getActiveScenario } from "@/utils/scenarioStorage";
 import { getActiveMatcherScenario } from "@/utils/matcherScenarioStorage";
+import { getActiveMatcherMatchingScenario } from "@/utils/matcherMatchingScenarioStorage";
+import type { MatcherScenarioStep } from "@/data/matcherScenario";
 
 const TOOLTIP_KEYWORDS = [
   "requirements",
@@ -132,11 +134,11 @@ const SNIPPET_THINK_MS = 1400;
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds } = usePhase();
+  const { setActivePhase, activePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, matcherScenarioType, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
-  const matcherScenario = useRef(getActiveMatcherScenario());
+  const matcherScenario = useRef<MatcherScenarioStep[]>([]);
 
   // When arriving from the welcome screen, pre-populate step 0 messages and the
   // user's own message as static content so they're never re-appended by effects.
@@ -195,6 +197,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         content: "I notice only one candidate has caught your eye so far. Would you like me to find better matches based on your reactions?",
         primaryLabel: "Yes, find better matches",
         secondaryLabel: "No thanks",
+        onPrimary: () => activateMatcherChat("matching"),
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -205,6 +208,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     if (matcherChatActive && !prevMatcherChatActive.current) {
       prevMatcherChatActive.current = true;
       setMatcherJoining(true);
+      matcherScenario.current = matcherScenarioType === "matching" ? getActiveMatcherMatchingScenario() : getActiveMatcherScenario();
       matcherStepRef.current = 0;
       // Show "joined" notification after short delay, then play first matcher message
       const t1 = setTimeout(() => {
@@ -217,7 +221,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       pendingTimeouts.current.push(t1, t2);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matcherChatActive]);
+  }, [matcherChatActive, matcherScenarioType]);
 
   function schedule(fn: () => void, delay: number) {
     const t = setTimeout(fn, delay);
@@ -350,7 +354,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
             content: "You've been refining your requirements a few times. Would you like to work through them together with Steven?",
             primaryLabel: "Yes, let's review",
             secondaryLabel: "I'll handle myself",
-            onPrimary: activateMatcherChat,
+            onPrimary: () => activateMatcherChat("requirements"),
           }), 800);
         }
         break;
@@ -435,11 +439,12 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
       const lower = userText.toLowerCase();
       if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) {
+        const tooltipType = activePhase >= 3 ? "matching" : "requirements";
         triggerTooltip({
           content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
           primaryLabel: "Yes, join in",
           secondaryLabel: "Not now",
-          onPrimary: activateMatcherChat,
+          onPrimary: () => activateMatcherChat(tooltipType),
         });
       }
     }
