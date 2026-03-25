@@ -2,23 +2,11 @@ export default function MatcherCard({ onChatClick }: { onChatClick?: () => void 
   return (
     <div className="flex flex-col gap-3">
       <div className="relative overflow-hidden" style={{ height: 160 }}>
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(160deg, #c8c2bc 0%, #b0a89e 60%, #9e9088 100%)",
-          }}
-        />
-        <div
-          className="absolute"
-          style={{
-            width: 100,
-            height: 150,
-            borderRadius: "50% 50% 0 0",
-            background: "rgba(170,155,142,0.5)",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/photos/matcher.png"
+          alt="Steven Kovacel"
+          className="absolute inset-0 w-full h-full object-cover object-top"
         />
         {/* Name + status overlay */}
         <div

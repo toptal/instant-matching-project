@@ -37,16 +37,14 @@ export default function ChatInput({
       >
         {/* Green header bar */}
         <div className="flex items-center gap-2 px-4 py-2">
-          {/* Avatar placeholder */}
-          <div
-            className="shrink-0 rounded-full overflow-hidden flex items-center justify-center"
-            style={{ width: 24, height: 24, background: "rgba(255,255,255,0.25)" }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="7" cy="5" r="3" fill="white" />
-              <path d="M1 13c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </div>
+          {/* Avatar */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/photos/matcher.png"
+            alt="Steven Kovacel"
+            className="shrink-0 object-cover object-top"
+            style={{ width: 24, height: 24 }}
+          />
           <span className="text-white font-semibold text-[13px] leading-5">Steven Kovacel</span>
           <span className="text-white text-[13px] leading-5 opacity-80">
             {matcherJoining ? "Joining..." : "In chat"}
