@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import MatcherCard from "./MatcherCard";
 import NavRow from "./NavRow";
 import MatcherTooltip from "./MatcherTooltip";
 import JobDetailsPanel from "./JobDetailsPanel";
 import CandidatesPanel from "./CandidatesPanel";
 import { usePhase } from "@/context/PhaseContext";
+import type { TooltipConfig } from "@/context/PhaseContext";
 
 type ActivePanel = "default" | "job-details" | "candidates";
 
@@ -15,8 +16,31 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipConfig, dismissTooltip, activateMatcherChat, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
+  const { tooltipConfig, dismissTooltip, triggerTooltip, activateMatcherChat, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
+  const pendingTooltipRef = useRef<TooltipConfig | null>(null);
+  const pendingTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // When a tooltip is triggered while a sub-panel is open: navigate back first,
+  // then show the tooltip after the slide animation completes.
+  useEffect(() => {
+    if (tooltipConfig && activePanel !== "default") {
+      pendingTooltipRef.current = tooltipConfig;
+      dismissTooltip();
+      setActivePanel("default");
+      // Store the timeout in a ref so it isn't cancelled when dismissTooltip()
+      // causes this effect to re-run (effects clean up before re-running).
+      if (pendingTooltipTimerRef.current) clearTimeout(pendingTooltipTimerRef.current);
+      pendingTooltipTimerRef.current = setTimeout(() => {
+        if (pendingTooltipRef.current) {
+          triggerTooltip(pendingTooltipRef.current);
+          pendingTooltipRef.current = null;
+        }
+        pendingTooltipTimerRef.current = null;
+      }, 350); // slightly after the 300ms slide transition
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tooltipConfig]);
 
   function openJobDetails() {
     markJobDetailsViewed();
