@@ -17,7 +17,14 @@ export default function MatcherCard({ onChatClick }: { onChatClick?: () => void 
         >
           <p className="text-white font-semibold text-[14px] leading-tight">Steven Kovacel</p>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-2 h-2 rounded-full bg-[#03B080] shrink-0" />
+            <span className="relative shrink-0 w-2 h-2">
+              {/* Ping ring — emanates outward from the dot */}
+              <span
+                className="absolute inset-0 rounded-full bg-[#03B080]"
+                style={{ animation: "dot-ping 2s ease-out infinite" }}
+              />
+              <span className="absolute inset-0 rounded-full bg-[#03B080]" />
+            </span>
             <span className="text-white text-[12px]">Monitoring your activity</span>
           </div>
         </div>

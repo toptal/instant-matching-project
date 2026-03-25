@@ -10,8 +10,16 @@ interface Props {
 
 export default function MatcherTooltip({ content, primaryLabel, secondaryLabel, onPrimary, onSecondary }: Props) {
   return (
-    // drop-shadow on the wrapper so the shadow follows the card + arrow as one shape
-    <div style={{ position: "relative", width: 301, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.12))" }}>
+    // drop-shadow on the wrapper so the shadow follows the card + arrow as one shape.
+    // transform-origin is set to the arrow tip (right edge + 9px, ~36px from top) so
+    // the tooltip appears to pop out of the green dot on the matcher card.
+    <div style={{
+      position: "relative",
+      width: 301,
+      filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.12))",
+      transformOrigin: "calc(100% + 9px) 36px",
+      animation: "tooltip-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+    }}>
       {/* Card */}
       <div
         className="rounded-xl flex flex-col gap-3"
