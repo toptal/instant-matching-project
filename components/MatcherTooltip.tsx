@@ -1,11 +1,14 @@
 "use client";
 
 interface Props {
-  onDismiss: () => void;
-  onAccept: () => void;
+  content: string;
+  primaryLabel: string;
+  secondaryLabel: string;
+  onPrimary: () => void;
+  onSecondary: () => void;
 }
 
-export default function MatcherTooltip({ onDismiss, onAccept }: Props) {
+export default function MatcherTooltip({ content, primaryLabel, secondaryLabel, onPrimary, onSecondary }: Props) {
   return (
     <div className="flex items-start gap-0">
       {/* Tooltip card */}
@@ -20,24 +23,23 @@ export default function MatcherTooltip({ onDismiss, onAccept }: Props) {
         }}
       >
         <p className="text-[13px] leading-[20px]" style={{ color: "#1a1a2e" }}>
-          Are you ok with your requirements? If you need another pair of eyes
-          and my expertise knowledge I can join and help you with requirements.
+          {content}
         </p>
 
         <div className="flex gap-2">
           <button
-            onClick={onDismiss}
+            onClick={onSecondary}
             className="flex-1 text-[13px] font-semibold py-1.5 rounded-lg"
             style={{ border: "1.5px solid #EBECED", color: "#455065", background: "#fff" }}
           >
-            Not now
+            {secondaryLabel}
           </button>
           <button
-            onClick={onAccept}
+            onClick={onPrimary}
             className="flex-1 text-[13px] font-semibold py-1.5 rounded-lg text-white"
             style={{ background: "#204ECF" }}
           >
-            Yes, join in
+            {primaryLabel}
           </button>
         </div>
       </div>

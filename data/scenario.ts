@@ -67,6 +67,16 @@
 //                  sends that text as the user's message and advances the step.
 //                  Use an empty array [] to show no chips (free text only).
 //
+//   4. { kind: "tooltip"; content: string; primaryLabel: string; secondaryLabel: string }
+//      Triggers the floating tooltip that appears to the left of the sidebar.
+//      - content       — The tooltip body text.
+//      - primaryLabel  — Label for the blue (confirm) button.
+//      - secondaryLabel — Label for the ghost (dismiss) button.
+//      The tooltip appears after all preceding items in the step have played.
+//      Clicking either button dismisses the tooltip; neither advances the scenario.
+//      TIP: Place a tooltip item at the end of a step so it appears after the
+//      AI messages have finished. Only one tooltip can be visible at a time.
+//
 // ── SnippetItem ───────────────────────────────────────────────────────────────
 //
 //   Three card types, each with a different `type` discriminant:
@@ -133,7 +143,17 @@ export type SnippetItem =
 export type ScenarioItem =
   | { kind: "message"; text: string; style?: "heading" | "text" }
   | { kind: "snippet"; snippet: SnippetItem }
-  | { kind: "responses"; options: string[] };
+  | { kind: "responses"; options: string[] }
+  | {
+      // Triggers the floating tooltip next to the sidebar.
+      // The tooltip appears after all preceding items in the step have played.
+      // primaryLabel is the blue (confirm) button; secondaryLabel is the ghost (dismiss) button.
+      // Neither button advances the scenario — the user must still send a message to proceed.
+      kind: "tooltip";
+      content: string;
+      primaryLabel: string;
+      secondaryLabel: string;
+    };
 
 export type ScenarioStep = {
   id: string;
