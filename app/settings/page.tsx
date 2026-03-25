@@ -846,6 +846,12 @@ export default function SettingsPage() {
             checked={settings.showWelcomeScreen}
             onChange={(v) => update({ showWelcomeScreen: v })}
           />
+          <SettingRow
+            label="Skip animations"
+            description="Reveal all text instantly without typewriter effects. Useful for testing and quick walkthroughs."
+            checked={settings.skipAnimations}
+            onChange={(v) => update({ skipAnimations: v })}
+          />
         </Card>
 
         {/* Scenario card */}
