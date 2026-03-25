@@ -280,6 +280,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     if (step.talentsSnippet) {
       schedule(() => {
         const batch = revealNextBatch(3, true);
+        if (batch.length === 0) return; // pool exhausted — skip rather than show empty snippet
         setMessages((prev) => [
           ...prev,
           { id: uid(), type: "snippet-talents", candidates: batch, matcherPick: true },
@@ -365,6 +366,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         } else {
           // New batch — pull next 3 candidates from the pool.
           const batch = revealNextBatch(3);
+          if (batch.length === 0) break; // pool exhausted — skip rather than show empty snippet
           autoMatchedSnippetCountRef.current += 1;
           setMessages((prev) => [
             ...prev,
@@ -459,25 +461,13 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   }, []);
 
   // Callback from AISnippetTalents when user passes on a candidate
-  function handlePass(candidateName: string) {
+  function handlePass(_candidateName: string) {
     passCountRef.current += 1;
-    setIsLoading(true);
-    schedule(() => {
-      if (passCountRef.current >= 2) {
-        appendAIText(
-          `Thanks for the feedback on ${candidateName}. I can see a pattern — let me factor that into the next set of results.`
-        );
-      } else {
-        appendAIText(
-          `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`
-        );
-      }
-      setIsLoading(false);
-    }, fd(700));
   }
 
   // User sends a free-form message → advance scenario (or matcher scenario if active)
   function handleSend(text: string) {
+    dismissTooltip();
     if (matcherChatActive) {
       advanceMatcherScenario(text);
     } else {
@@ -487,6 +477,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // User clicks a quick-reply chip → post it as user message and advance scenario
   function handleOptionSelect(option: string) {
+    dismissTooltip();
     if (matcherChatActive) {
       advanceMatcherScenario(option);
     } else {
