@@ -26,6 +26,39 @@ function SkillPill({ label }: { label: string }) {
   );
 }
 
+function NavButton({ direction, label, disabled, onClick }: { direction: "prev" | "next"; label: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-1"
+      style={{
+        background: "none",
+        border: "none",
+        padding: 0,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.25 : 1,
+        transition: "opacity 0.15s",
+        color: "#455065",
+        fontSize: 12,
+        fontWeight: 500,
+      }}
+    >
+      {direction === "prev" && (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M10 12L6 8l4-4" stroke="#455065" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+      {label}
+      {direction === "next" && (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M6 4l4 4-4 4" stroke="#455065" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 interface Props {
   /** The specific batch of candidates to display. Empty when viewMode is set. */
   candidates: Candidate[];
@@ -42,7 +75,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
   const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds, scheduleInterviewEnabled } = usePhase();
   const scheduleEnabled = scheduleInterviewEnabled;
   const [modalIndex, setModalIndex] = useState<number | null>(null);
-  const [frontIndex, setFrontIndex] = useState(0);
+  const [navIndex, setNavIndex] = useState(0);
   const prevModalIndex = useRef<number | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [compareList, setCompareList] = useState<Candidate[]>([]);
@@ -77,11 +110,6 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
       onPass?.(c.name);
     }
 
-    // Advance front card if we just decided the current front
-    if (localIndex === frontIndex && frontIndex < candidates.length - 1) {
-      setTimeout(() => setFrontIndex((f) => f + 1), 250);
-    }
-
     // Auto-advance modal to next undecided candidate in this batch, or close
     const nextUndecided = candidates.findIndex(
       (_, i) => i !== localIndex && (candidateDecisions[candidates[i].id] ?? null) === null
@@ -91,13 +119,21 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
     } else {
       setModalIndex(null);
     }
+
+    // Advance nav to next undecided card after a decision
+    const nextNav = candidates.findIndex(
+      (_, i) => i > localIndex && (candidateDecisions[candidates[i].id] ?? null) === null
+    );
+    if (nextNav !== -1) {
+      setTimeout(() => setNavIndex(nextNav), 250);
+    } else if (localIndex < candidates.length - 1) {
+      setTimeout(() => setNavIndex(localIndex + 1), 250);
+    }
   }
 
   const allDecided = candidates.length > 0 && candidates.every((c) => (candidateDecisions[c.id] ?? null) !== null);
 
-  // Keep an "Interested" candidate upfront if any; otherwise use frontIndex
-  const interestedIndex = candidates.findIndex((c) => (candidateDecisions[c.id] ?? null) === "interested");
-  const displayIndex = interestedIndex !== -1 ? interestedIndex : frontIndex;
+  const displayIndex = Math.min(navIndex, candidates.length - 1);
 
   // Ghost card count is fixed to the batch size so the deck never shrinks as
   // candidates are reviewed. Max 2 ghost cards for visual purposes.
@@ -115,6 +151,46 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
   return (
     <>
+      {/* Outer wrapper — card is full thread width; nav buttons overflow the deck into the thread margin */}
+      <div className="relative w-full" style={{ marginBottom: 12 }}>
+
+      {/* Nav bar — prev/next + dot indicators above the deck */}
+      {candidates.length > 1 && (
+        <div className="flex items-center justify-between mb-3">
+          <NavButton direction="prev" label="Previous" disabled={displayIndex === 0} onClick={() => setNavIndex((i) => Math.max(0, i - 1))} />
+          <div className="flex items-center gap-1.5">
+            {candidates.map((_, i) => {
+              const dec = candidateDecisions[candidates[i].id] ?? null;
+              const isActive = i === displayIndex;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setNavIndex(i)}
+                  style={{
+                    width: isActive ? 20 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    background: dec === "interested"
+                      ? "#03B080"
+                      : dec === "not-a-fit"
+                      ? "#E53935"
+                      : isActive
+                      ? "#204ECF"
+                      : "#EBECED",
+                  }}
+                />
+              );
+            })}
+          </div>
+          <NavButton direction="next" label="Next" disabled={displayIndex === candidates.length - 1} onClick={() => setNavIndex((i) => Math.min(candidates.length - 1, i + 1))} />
+        </div>
+      )}
+
+
+      {/* Deck with ghost cards and front card */}
       <div className="relative w-full" style={{ paddingBottom: ghostCount * 8 }}>
         {/* Ghost cards — fixed count matches batch size so deck never shrinks */}
         {Array.from({ length: ghostCount }, (_, pos) => {
@@ -139,9 +215,9 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
         })}
 
         {/* Front card */}
-        {frontIndex < candidates.length && c && (
+        {displayIndex < candidates.length && c && (
           <div
-            className="relative flex items-center gap-6 rounded-sm"
+            className="relative flex items-start gap-6 rounded-sm"
             style={{
               border: "1.5px solid #EBECED",
               boxShadow: "0 0 8px rgba(0,0,0,0.08)",
@@ -287,6 +363,7 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
       </div>
 
+      </div>
 
       {/* Detail modal */}
       {modalIndex !== null && (
