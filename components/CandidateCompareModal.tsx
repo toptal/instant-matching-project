@@ -94,31 +94,41 @@ function CandidateActionBar({
         >
           {decision === "not-a-fit" ? "✗ Not a Fit" : "Not a Fit"}
         </button>
-        <div className="relative flex-1 group">
-          <button
-            disabled={!scheduleInterviewEnabled}
-            className="w-full py-2 rounded text-[13px] font-semibold text-white"
-            style={{
-              background: "#204ECF",
-              opacity: scheduleInterviewEnabled ? 1 : 0.5,
-              cursor: scheduleInterviewEnabled ? "pointer" : "default",
-            }}
-          >
-            Schedule Interview
-          </button>
-          {!scheduleInterviewEnabled && (
-            <div
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
-              style={{ background: "#1a1a2e" }}
+        {decision === "interested" ? (
+          <div className="relative flex-1 group">
+            <button
+              disabled={!scheduleInterviewEnabled}
+              className="w-full py-2 rounded text-[13px] font-semibold text-white"
+              style={{
+                background: "#204ECF",
+                opacity: scheduleInterviewEnabled ? 1 : 0.5,
+                cursor: scheduleInterviewEnabled ? "pointer" : "default",
+              }}
             >
-              We are confirming talent availability
+              Schedule Interview
+            </button>
+            {!scheduleInterviewEnabled && (
               <div
-                className="absolute top-full left-1/2 -translate-x-1/2"
-                style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
-              />
-            </div>
-          )}
-        </div>
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                style={{ background: "#1a1a2e" }}
+              >
+                We are confirming talent availability
+                <div
+                  className="absolute top-full left-1/2 -translate-x-1/2"
+                  style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            className="flex-1 py-2 rounded text-[13px] font-semibold text-white cursor-pointer"
+            style={{ background: "#03B080" }}
+            onClick={() => onDecide("interested")}
+          >
+            Interested
+          </button>
+        )}
       </div>
     </div>
   );
