@@ -12,19 +12,11 @@ import { PhaseProvider, usePhase } from "@/context/PhaseContext";
 import type { SnippetItem } from "@/data/scenario";
 import type { Candidate } from "@/data/candidates";
 import { getActiveScenario } from "@/utils/scenarioStorage";
-import { MATCHER_SCENARIO } from "@/data/matcherScenario";
+import { getActiveMatcherScenario } from "@/utils/matcherScenarioStorage";
+import { getActiveMatcherMatchingScenario } from "@/utils/matcherMatchingScenarioStorage";
+import type { MatcherScenarioStep } from "@/data/matcherScenario";
+import { isFastMode, fd } from "@/utils/fastMode";
 
-const TOOLTIP_KEYWORDS = [
-  "requirements",
-  "matcher",
-  "help",
-  "adjust",
-  "refine",
-  "struggling",
-  "not sure",
-  "unsure",
-  "change",
-];
 
 type Message =
   | { id: string; type: "ai-heading"; content: string }
@@ -42,15 +34,17 @@ type Message =
 function TypewriterText({
   text,
   threadRef,
+  charDelay = 15,
   className = "text-[14px] leading-[22px]",
   style = { color: "#455065" },
 }: {
   text: string;
   threadRef: React.RefObject<HTMLDivElement | null>;
+  charDelay?: number;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => charDelay === 0 ? text.length : 0);
 
   useEffect(() => {
     if (count >= text.length) return;
@@ -59,9 +53,9 @@ function TypewriterText({
       if (threadRef.current) {
         threadRef.current.scrollTop = threadRef.current.scrollHeight;
       }
-    }, 15);
+    }, charDelay);
     return () => clearTimeout(t);
-  }, [count, text, threadRef]);
+  }, [count, text, threadRef, charDelay]);
 
   const visible = text.slice(0, count);
   const paras = visible.split("\n\n");
@@ -125,17 +119,18 @@ function uid() {
 }
 
 // Must match the setTimeout delay inside TypewriterText
-const TYPEWRITER_CHAR_MS = 15;
+const TYPEWRITER_CHAR_MS = fd(15);
 
 // How long the thinking dots show before a snippet card appears
-const SNIPPET_THINK_MS = 1400;
+const SNIPPET_THINK_MS = fd(1400);
 
 // Inner component so it can access PhaseContext
 function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
-  const { setActivePhase, triggerMatcherTooltip, updateJobDetails, revealNextBatch, matcherChatActive, deactivateMatcherChat } = usePhase();
+  const { setActivePhase, activePhase, triggerTooltip, dismissTooltip, activateMatcherChat, updateJobDetails, revealNextBatch, matcherChatActive, matcherScenarioType, deactivateMatcherChat, candidateDecisions, revealedCandidates, matcherRevealedIds, enableScheduleInterview } = usePhase();
 
   // Resolved once on mount — picks up any custom scenario saved in localStorage.
   const scenario = useRef(getActiveScenario());
+  const matcherScenario = useRef<MatcherScenarioStep[]>([]);
 
   // When arriving from the welcome screen, pre-populate step 0 messages and the
   // user's own message as static content so they're never re-appended by effects.
@@ -165,6 +160,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   const [matcherJoining, setMatcherJoining] = useState(false);
   const matcherStepRef = useRef(0);
   const prevMatcherChatActive = useRef(false);
+  // Condition tracking — how many times RequirementSnippet has appeared
+  const requirementSnippetCountRef = useRef(0);
+  const requirementTooltipShownRef = useRef(false);
+  // Condition tracking — interested-candidates tooltip after second auto-matched snippet
+  const autoMatchedSnippetCountRef = useRef(0);
+  const interestedTooltipShownRef = useRef(false);
+  // Tracks whether the second auto-matched TalentsSnippet modal has been dismissed
+  const [secondSnippetDismissed, setSecondSnippetDismissed] = useState(false);
 
   useEffect(() => {
     if (threadRef.current) {
@@ -172,24 +175,45 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     }
   }, [messages]);
 
+  // Condition: fewer than 3 auto-matched candidates marked as interested after second snippet is dismissed
+  useEffect(() => {
+    if (interestedTooltipShownRef.current) return;
+    if (!secondSnippetDismissed) return;
+    const autoMatched = revealedCandidates.filter((c) => !matcherRevealedIds.includes(c.id));
+    const interested = autoMatched.filter((c) => candidateDecisions[c.id] === "interested");
+    if (interested.length >= 3) return;
+    interestedTooltipShownRef.current = true;
+    triggerTooltip({
+      content: "Want a second opinion? A matcher can step in, review what's caught your eye, and recommend better candidates.",
+      primaryLabel: "Yes, get help",
+      secondaryLabel: "Not now",
+      onPrimary: () => activateMatcherChat("matching"),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidateDecisions, revealedCandidates, matcherRevealedIds, secondSnippetDismissed]);
+
   // Trigger matcher joining sequence when matcherChatActive flips to true
   useEffect(() => {
     if (matcherChatActive && !prevMatcherChatActive.current) {
       prevMatcherChatActive.current = true;
       setMatcherJoining(true);
+      matcherScenario.current = matcherScenarioType === "matching" ? getActiveMatcherMatchingScenario() : getActiveMatcherScenario();
       matcherStepRef.current = 0;
       // Show "joined" notification after short delay, then play first matcher message
       const t1 = setTimeout(() => {
         setMessages((prev) => [...prev, { id: uid(), type: "matcher-joined" }]);
         setMatcherJoining(false);
-      }, 1500);
+      }, fd(1500));
       const t2 = setTimeout(() => {
         playMatcherStep(0);
-      }, 2200);
+      }, fd(2200));
       pendingTimeouts.current.push(t1, t2);
+    } else if (!matcherChatActive) {
+      // Reset so the next activation (e.g. matching scenario after requirements) fires correctly.
+      prevMatcherChatActive.current = false;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matcherChatActive]);
+  }, [matcherChatActive, matcherScenarioType]);
 
   function schedule(fn: () => void, delay: number) {
     const t = setTimeout(fn, delay);
@@ -225,14 +249,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // Play a step from the matcher scenario
   function playMatcherStep(stepIndex: number) {
-    if (stepIndex >= MATCHER_SCENARIO.length) return;
-    const step = MATCHER_SCENARIO[stepIndex];
+    if (stepIndex >= matcherScenario.current.length) return;
+    const step = matcherScenario.current[stepIndex];
     matcherStepRef.current = stepIndex;
 
     setActiveOptions(null);
     setIsLoading(true);
 
-    const delay = 800;
+    const delay = fd(800);
     schedule(() => {
       appendMatcherText(step.matcherText);
     }, delay);
@@ -256,6 +280,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     if (step.talentsSnippet) {
       schedule(() => {
         const batch = revealNextBatch(3, true);
+        if (batch.length === 0) return; // pool exhausted — skip rather than show empty snippet
         setMessages((prev) => [
           ...prev,
           { id: uid(), type: "snippet-talents", candidates: batch, matcherPick: true },
@@ -268,6 +293,13 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       setIsLoading(false);
       if (step.userOptions.length > 0) setActiveOptions(step.userOptions);
     }, snippetDelay);
+
+    // Auto-advance only when there are no user options (no interaction needed)
+    if (step.userOptions.length === 0) {
+      schedule(() => {
+        advanceMatcherScenario(undefined);
+      }, snippetDelay + fd(3000));
+    }
   }
 
   // Advance the matcher scenario (called when user sends a message while matcher is active)
@@ -277,14 +309,17 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
     }
     const nextStep = matcherStepRef.current + 1;
-    if (nextStep < MATCHER_SCENARIO.length) {
+    if (nextStep < matcherScenario.current.length) {
       playMatcherStep(nextStep);
     } else {
-      // Scenario exhausted — matcher leaves
+      // Scenario exhausted — matcher leaves, then main scenario resumes automatically
       schedule(() => {
         setMessages((prev) => [...prev, { id: uid(), type: "matcher-left" }]);
         deactivateMatcherChat();
       }, 600);
+      schedule(() => {
+        advanceScenario();
+      }, 1800);
     }
   }
 
@@ -315,12 +350,23 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
           { id: uid(), type: "snippet-requirements", variant, versionLabel },
         ]);
         updateJobDetails(variant, versionLabel);
+        requirementSnippetCountRef.current += 1;
+        if (requirementSnippetCountRef.current === 3 && !requirementTooltipShownRef.current) {
+          requirementTooltipShownRef.current = true;
+          setTimeout(() => triggerTooltip({
+            content: "Are you ok with your requirements? If you need another pair of eyes and my expert knowledge I can join and help you.",
+            primaryLabel: "Yes, join in",
+            secondaryLabel: "Not now",
+            onPrimary: () => activateMatcherChat("requirements"),
+          }), 800);
+        }
         break;
       }
 
       case "TalentsSnippet": {
         if (snippet.view_mode) {
           // Shortlist / interviewed view — show already-revealed candidates, filtered in component.
+          enableScheduleInterview();
           setMessages((prev) => [
             ...prev,
             { id: uid(), type: "snippet-talents", candidates: [], viewMode: snippet.view_mode },
@@ -328,6 +374,8 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         } else {
           // New batch — pull next 3 candidates from the pool.
           const batch = revealNextBatch(3);
+          if (batch.length === 0) break; // pool exhausted — skip rather than show empty snippet
+          autoMatchedSnippetCountRef.current += 1;
           setMessages((prev) => [
             ...prev,
             { id: uid(), type: "snippet-talents", candidates: batch },
@@ -354,7 +402,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     for (const item of step.items) {
       if (item.kind === "message") {
         hasContent = true;
-        delay += 900;
+        delay += fd(900);
         const d = delay;
         const isHeading = item.style === "heading";
         schedule(() => (isHeading ? appendAIHeading(item.text) : appendAIText(item.text)), d);
@@ -368,6 +416,14 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         schedule(() => addSnippetToThread(s), d);
       } else if (item.kind === "responses") {
         lastResponseOptions = item.options;
+      } else if (item.kind === "tooltip") {
+        const t = item;
+        const d = delay + fd(400);
+        schedule(() => triggerTooltip({
+          content: t.content,
+          primaryLabel: t.primaryLabel,
+          secondaryLabel: t.secondaryLabel,
+        }), d);
       }
     }
 
@@ -378,7 +434,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
     schedule(() => {
       setIsLoading(false);
       if (opts) setActiveOptions(opts);
-    }, delay + 400);
+    }, delay + fd(400));
   }
 
   // Advance to the next scenario step, optionally posting a user message first
@@ -387,8 +443,6 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
     if (userText) {
       setMessages((prev) => [...prev, { id: uid(), type: "user-text", content: userText }]);
-      const lower = userText.toLowerCase();
-      if (TOOLTIP_KEYWORDS.some((kw) => lower.includes(kw))) triggerMatcherTooltip();
     }
 
     playScenarioStep(currentStepRef.current + 1);
@@ -415,25 +469,13 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
   }, []);
 
   // Callback from AISnippetTalents when user passes on a candidate
-  function handlePass(candidateName: string) {
+  function handlePass(_candidateName: string) {
     passCountRef.current += 1;
-    setIsLoading(true);
-    schedule(() => {
-      if (passCountRef.current >= 2) {
-        appendAIText(
-          `Thanks for the feedback on ${candidateName}. I can see a pattern — let me factor that into the next set of results.`
-        );
-      } else {
-        appendAIText(
-          `Thanks for the feedback on ${candidateName}. I'll factor this into future recommendations.`
-        );
-      }
-      setIsLoading(false);
-    }, 700);
   }
 
   // User sends a free-form message → advance scenario (or matcher scenario if active)
   function handleSend(text: string) {
+    dismissTooltip();
     if (matcherChatActive) {
       advanceMatcherScenario(text);
     } else {
@@ -443,6 +485,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
 
   // User clicks a quick-reply chip → post it as user message and advance scenario
   function handleOptionSelect(option: string) {
+    dismissTooltip();
     if (matcherChatActive) {
       advanceMatcherScenario(option);
     } else {
@@ -459,6 +502,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
             <TypewriterText
               text={msg.content}
               threadRef={threadRef}
+              charDelay={TYPEWRITER_CHAR_MS}
               className="font-semibold text-[20px] leading-[30px]"
               style={{ color: "#455065" }}
             />
@@ -473,7 +517,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
       case "ai-text": {
         const animate = animatedIds.current.has(msg.id) && typeof msg.content === "string";
         if (animate) {
-          return <TypewriterText text={msg.content as string} threadRef={threadRef} />;
+          return <TypewriterText text={msg.content as string} threadRef={threadRef} charDelay={TYPEWRITER_CHAR_MS} />;
         }
         if (typeof msg.content === "string") {
           const paras = msg.content.split("\n\n");
@@ -519,8 +563,17 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
         return <AISnippetSteps />;
       case "snippet-requirements":
         return <AISnippetRequirements variant={msg.variant} versionLabel={msg.versionLabel} />;
-      case "snippet-talents":
-        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} matcherPick={msg.matcherPick} onPass={handlePass} />;
+      case "snippet-talents": {
+        const lastTalentId = [...messages].reverse().find((m) => m.type === "snippet-talents" && !m.matcherPick)?.id;
+        const isLast = !msg.viewMode && !msg.matcherPick && msg.id === lastTalentId;
+        const handleDismiss = isLast ? () => {
+          if (autoMatchedSnippetCountRef.current >= 2) {
+            setSecondSnippetDismissed(true);
+          }
+          schedule(() => advanceScenario(), 800);
+        } : undefined;
+        return <AISnippetTalents candidates={msg.candidates} viewMode={msg.viewMode} matcherPick={msg.matcherPick} onPass={handlePass} onDismiss={handleDismiss} />;
+      }
       case "matcher-joined":
         return (
           <div className="flex items-center gap-3 py-1">
@@ -574,6 +627,7 @@ function WorkspaceInner({ initialMessage }: { initialMessage?: string }) {
                 <TypewriterText
                   text={msg.content}
                   threadRef={threadRef}
+                  charDelay={TYPEWRITER_CHAR_MS}
                   className="text-[14px] leading-[22px]"
                   style={{ color: "#1a3a2e" }}
                 />

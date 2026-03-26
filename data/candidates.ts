@@ -580,4 +580,147 @@ export const CANDIDATES: Candidate[] = [
       },
     ],
   },
+
+  // ── Batch 4 (buffer / overflow) ────────────────────────────────────────────
+  {
+    id: "c10",
+    name: "Daniel Osei",
+    role: "Backend Engineer",
+    badge: "Auto-matched",
+    source: "system",
+    reasons: [
+      { bold: "6 years", post: " building distributed systems in Node.js" },
+      { pre: "Strong experience with ", bold: "event-driven architecture" },
+      { bold: "Open-source contributor", post: " to several Node.js libraries" },
+    ],
+    skills: ["Node.js | 6 years", "PostgreSQL | 5 years", "Kafka | 3 years"],
+    canStart: "Immediately",
+    availability: "Full Time",
+    localTime: "10:00 AM Local Time",
+    about:
+      "Daniel is a backend engineer with six years of experience designing and operating distributed systems at scale. He has deep expertise in event-driven architecture, having built Kafka-based pipelines processing millions of events per day. Daniel is a practical engineer who values operational simplicity — he reaches for the right tool rather than the fashionable one, and writes systems that are easy to debug at 3am. He has contributed patches to several popular Node.js libraries and is comfortable across the full backend stack from database schema design to API gateway configuration.",
+    experience: [
+      {
+        title: "Senior Backend Engineer",
+        company: "Monzo",
+        years: "2021 - 2024",
+        bullets: [
+          "Designed event-driven payment processing pipeline handling 5M events/day with 99.99% uptime.",
+          "Reduced P99 API latency by 40% through query optimisation and connection pool tuning.",
+          "Led migration from monolith to microservices for the notifications domain.",
+        ],
+      },
+      {
+        title: "Backend Engineer",
+        company: "Deliveroo",
+        years: "2019 - 2021",
+        bullets: [
+          "Built order tracking service serving 2M daily active users across 12 markets.",
+          "Introduced distributed tracing with Jaeger, reducing MTTR for production incidents by 50%.",
+        ],
+      },
+      {
+        title: "Junior Developer",
+        company: "Andela",
+        years: "2018 - 2019",
+        bullets: [
+          "Developed REST APIs for client projects in the fintech and logistics sectors.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "c11",
+    name: "Sofia Reyes",
+    role: "Full Stack Developer",
+    badge: "Auto-matched",
+    source: "system",
+    reasons: [
+      { bold: "5 years", post: " delivering full-stack TypeScript applications" },
+      { pre: "Led rebuild of ", bold: "high-traffic e-commerce platform" },
+      { bold: "Strong testing culture", post: " — 90%+ coverage across all projects" },
+    ],
+    skills: ["TypeScript | 5 years", "React | 4 years", "Node.js | 4 years"],
+    canStart: "In 1 week",
+    availability: "Full Time",
+    localTime: "3:30 PM Local Time",
+    about:
+      "Sofia is a full-stack developer who brings the same level of rigour to the frontend and backend. She has spent five years building TypeScript applications end-to-end, with a focus on code quality, test coverage, and performance. Sofia led the complete rewrite of a high-traffic e-commerce platform, reducing page load times by 60% and improving conversion. She is a pragmatic engineer who ships fast without cutting corners, and is comfortable owning features from database schema to pixel-perfect UI.",
+    experience: [
+      {
+        title: "Senior Full Stack Developer",
+        company: "Farfetch",
+        years: "2022 - 2024",
+        bullets: [
+          "Led full-stack rebuild of product listing pages, improving Core Web Vitals scores to 95+.",
+          "Architected shared component library adopted by 5 engineering teams.",
+          "Maintained 92% test coverage across a 200k-line TypeScript codebase.",
+        ],
+      },
+      {
+        title: "Full Stack Developer",
+        company: "Checkout.com",
+        years: "2020 - 2022",
+        bullets: [
+          "Built merchant dashboard features used by 15,000+ businesses in 50 markets.",
+          "Introduced end-to-end testing with Playwright, catching 12 regressions before production.",
+        ],
+      },
+      {
+        title: "Junior Developer",
+        company: "Freelance",
+        years: "2019 - 2020",
+        bullets: [
+          "Delivered 8 client projects across retail, hospitality, and SaaS sectors.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "c12",
+    name: "Marcus Webb",
+    role: "DevOps Engineer",
+    badge: "Auto-matched",
+    source: "system",
+    reasons: [
+      { bold: "7 years", post: " in cloud infrastructure and CI/CD" },
+      { pre: "Reduced deployment frequency from ", bold: "weekly to multiple times per day" },
+      { bold: "Kubernetes certified", post: " with multi-cloud experience" },
+    ],
+    skills: ["Kubernetes | 5 years", "Terraform | 4 years", "AWS | 7 years"],
+    canStart: "In 2 weeks",
+    availability: "Full Time",
+    localTime: "9:00 AM Local Time",
+    about:
+      "Marcus is a DevOps engineer who has spent seven years building reliable, scalable infrastructure for engineering teams. He is fluent across AWS, GCP, and Azure, and has deep hands-on experience with Kubernetes, Terraform, and modern observability tooling. Marcus is pragmatic about automation — he automates what saves consistent time and avoids over-engineering. He has led infrastructure migrations, established on-call runbooks that reduced alert fatigue, and introduced platform engineering practices that improved developer experience significantly.",
+    experience: [
+      {
+        title: "Senior DevOps Engineer",
+        company: "Revolut",
+        years: "2021 - 2024",
+        bullets: [
+          "Managed Kubernetes clusters handling 50,000 pods across three AWS regions.",
+          "Reduced deployment lead time from 5 days to 4 hours through CI/CD pipeline optimisation.",
+          "Built self-service infrastructure provisioning platform adopted by 120 engineers.",
+        ],
+      },
+      {
+        title: "DevOps Engineer",
+        company: "GoCardless",
+        years: "2019 - 2021",
+        bullets: [
+          "Migrated legacy bare-metal infrastructure to AWS EKS, reducing infrastructure costs by 35%.",
+          "Established SLO-based alerting strategy, cutting on-call pages by 60%.",
+        ],
+      },
+      {
+        title: "Systems Administrator",
+        company: "TechHub",
+        years: "2017 - 2019",
+        bullets: [
+          "Managed Linux servers and CI pipelines for 30+ engineering projects.",
+        ],
+      },
+    ],
+  },
 ];

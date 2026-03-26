@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import ToptalLogo from "./ToptalLogo";
 import { getActiveScenario } from "@/utils/scenarioStorage";
+import { isFastMode, fd } from "@/utils/fastMode";
 
-const CHAR_DELAY = 14;
+const CHAR_DELAY = fd(14);
 
 const Cursor = () => (
   <span
@@ -39,9 +40,10 @@ function getWelcomeText() {
 
 export default function WelcomeScreen({ onSubmit }: { onSubmit: (text: string) => void }) {
   const { heading: HEADING, body: BODY } = getWelcomeText();
-  const [headingCount, setHeadingCount] = useState(0);
-  const [bodyCount, setBodyCount] = useState(0);
-  const [inputVisible, setInputVisible] = useState(false);
+  const fast = isFastMode();
+  const [headingCount, setHeadingCount] = useState(() => fast ? HEADING.length : 0);
+  const [bodyCount, setBodyCount] = useState(() => fast ? BODY.length : 0);
+  const [inputVisible, setInputVisible] = useState(fast);
   const [value, setValue] = useState("");
 
   const headingDone = headingCount >= HEADING.length;
@@ -64,7 +66,7 @@ export default function WelcomeScreen({ onSubmit }: { onSubmit: (text: string) =
   // Reveal input shortly after body completes
   useEffect(() => {
     if (!bodyDone) return;
-    const t = setTimeout(() => setInputVisible(true), 250);
+    const t = setTimeout(() => setInputVisible(true), fd(250));
     return () => clearTimeout(t);
   }, [bodyDone]);
 

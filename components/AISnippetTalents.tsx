@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import CandidateModal from "./CandidateModal";
+import CandidateCompareModal from "./CandidateCompareModal";
 import type { Candidate } from "@/data/candidates";
 import { usePhase } from "@/context/PhaseContext";
 
@@ -33,12 +34,25 @@ interface Props {
   /** When set, derives candidates from the revealed pool instead of the prop. */
   viewMode?: string;
   onPass?: (candidateName: string) => void;
+  /** Called when the review modal is dismissed (closed by user or after all candidates decided). */
+  onDismiss?: () => void;
 }
 
-export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass }: Props) {
-  const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds } = usePhase();
+export default function AISnippetTalents({ candidates: candidatesProp, viewMode, matcherPick, onPass, onDismiss }: Props) {
+  const { candidateDecisions, setCandidateDecision, revealedCandidates, matcherRevealedIds, scheduleInterviewEnabled } = usePhase();
+  const scheduleEnabled = scheduleInterviewEnabled;
   const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [frontIndex, setFrontIndex] = useState(0);
+  const prevModalIndex = useRef<number | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
+  const [compareList, setCompareList] = useState<Candidate[]>([]);
+
+  useEffect(() => {
+    if (prevModalIndex.current !== null && modalIndex === null) {
+      onDismiss?.();
+    }
+    prevModalIndex.current = modalIndex;
+  }, [modalIndex, onDismiss]);
 
   // For view_mode snippets (shortlist / interviewed), show the revealed pool filtered
   // to interested candidates; fall back to the full revealed list if none decided yet.
@@ -175,39 +189,50 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
               </div>
               {decision ? (
                 <div className="flex flex-col gap-2">
-                  {/* Disabled primary button with hover tooltip */}
-                  <div className="relative group">
-                    <button
-                      disabled
-                      className="w-full py-2 rounded text-[13px] font-semibold text-white"
-                      style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
-                    >
-                      Schedule Interview
-                    </button>
-                    <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                      style={{ background: "#1a1a2e" }}
-                    >
-                      We are confirming talent availability
-                      <div
-                        className="absolute top-full left-1/2 -translate-x-1/2"
-                        style={{
-                          width: 0,
-                          height: 0,
-                          borderLeft: "5px solid transparent",
-                          borderRight: "5px solid transparent",
-                          borderTop: "5px solid #1a1a2e",
-                        }}
-                      />
+                  {/* Disabled primary button with hover tooltip — only for interested */}
+                  {decision === "interested" && (
+                    <div className="relative group">
+                      <button
+                        disabled={!scheduleEnabled}
+                        className="w-full py-2 rounded text-[13px] font-semibold text-white"
+                        style={{ background: "#204ECF", opacity: scheduleEnabled ? 1 : 0.5, cursor: scheduleEnabled ? "pointer" : "default" }}
+                      >
+                        Schedule Interview
+                      </button>
+                      {!scheduleEnabled && (
+                        <div
+                          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                          style={{ background: "#1a1a2e" }}
+                        >
+                          We are confirming talent availability
+                          <div
+                            className="absolute top-full left-1/2 -translate-x-1/2"
+                            style={{
+                              width: 0,
+                              height: 0,
+                              borderLeft: "5px solid transparent",
+                              borderRight: "5px solid transparent",
+                              borderTop: "5px solid #1a1a2e",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
                   {/* Secondary button */}
                   <button
                     className="w-full py-2 rounded text-[13px] font-semibold cursor-pointer"
                     style={{ border: "1px solid #EBECED", color: "#455065", background: "white" }}
-                    onClick={() => setModalIndex(displayIndex)}
+                    onClick={() => {
+                      if (viewMode) {
+                        setCompareList(candidates);
+                        setShowCompare(true);
+                      } else {
+                        setModalIndex(displayIndex);
+                      }
+                    }}
                   >
-                    More Details
+                    {viewMode ? "Compare Talents" : "More Details"}
                   </button>
                 </div>
               ) : (
@@ -262,13 +287,8 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
 
       </div>
 
-      {allDecided && (
-        <p className="text-[13px] text-center w-full mt-3" style={{ color: "#455065" }}>
-          All candidates reviewed. Your feedback has been sent.
-        </p>
-      )}
 
-      {/* Modal */}
+      {/* Detail modal */}
       {modalIndex !== null && (
         <CandidateModal
           candidates={candidates.map(c => ({
@@ -280,6 +300,19 @@ export default function AISnippetTalents({ candidates: candidatesProp, viewMode,
           onClose={() => setModalIndex(null)}
           onDecide={handleDecide}
           onNavigate={setModalIndex}
+          scheduleEnabled={scheduleEnabled}
+        />
+      )}
+
+      {/* Compare modal — viewMode shortlist */}
+      {showCompare && (
+        <CandidateCompareModal
+          candidates={compareList}
+          decisions={compareList.map((c) => candidateDecisions[c.id] ?? null)}
+          matcherRevealedIds={matcherRevealedIds}
+          onClose={() => setShowCompare(false)}
+          onDecide={(id, decision) => setCandidateDecision(id, decision)}
+          onRemove={(id) => setCompareList((prev) => prev.filter((c) => c.id !== id))}
         />
       )}
     </>

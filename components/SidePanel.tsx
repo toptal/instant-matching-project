@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MatcherCard from "./MatcherCard";
 import NavRow from "./NavRow";
 import MatcherTooltip from "./MatcherTooltip";
 import JobDetailsPanel from "./JobDetailsPanel";
 import CandidatesPanel from "./CandidatesPanel";
 import { usePhase } from "@/context/PhaseContext";
+import type { TooltipConfig } from "@/context/PhaseContext";
 
 type ActivePanel = "default" | "job-details" | "candidates";
 
@@ -15,13 +16,31 @@ const Separator = () => (
 );
 
 export default function SidePanel() {
-  const { tooltipTriggerCount, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive, activateMatcherChat } = usePhase();
+  const { tooltipConfig, dismissTooltip, triggerTooltip, activateMatcherChat, activePhase, jobDetailsUpdated, jdVersionLabel, markJobDetailsViewed, revealedCandidates, candidatesNew, matcherChatActive } = usePhase();
   const [activePanel, setActivePanel] = useState<ActivePanel>("default");
-  const [showTooltip, setShowTooltip] = useState(false);
+  const pendingTooltipRef = useRef<TooltipConfig | null>(null);
+  const pendingTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // When a tooltip is triggered while a sub-panel is open: navigate back first,
+  // then show the tooltip after the slide animation completes.
   useEffect(() => {
-    if (tooltipTriggerCount > 0) setShowTooltip(true);
-  }, [tooltipTriggerCount]);
+    if (tooltipConfig && activePanel !== "default") {
+      pendingTooltipRef.current = tooltipConfig;
+      dismissTooltip();
+      setActivePanel("default");
+      // Store the timeout in a ref so it isn't cancelled when dismissTooltip()
+      // causes this effect to re-run (effects clean up before re-running).
+      if (pendingTooltipTimerRef.current) clearTimeout(pendingTooltipTimerRef.current);
+      pendingTooltipTimerRef.current = setTimeout(() => {
+        if (pendingTooltipRef.current) {
+          triggerTooltip(pendingTooltipRef.current);
+          pendingTooltipRef.current = null;
+        }
+        pendingTooltipTimerRef.current = null;
+      }, 350); // slightly after the 300ms slide transition
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tooltipConfig]);
 
   function openJobDetails() {
     markJobDetailsViewed();
@@ -37,15 +56,18 @@ export default function SidePanel() {
 
   return (
     <div className="relative h-full">
-      {/* Matcher tooltip — floats to the left of the sidebar */}
-      {showTooltip && (
+      {/* Tooltip — floats to the left of the sidebar */}
+      {tooltipConfig && (
         <div
           className="absolute z-20"
-          style={{ right: "calc(100% + 0px)", top: 180 }}
+          style={{ right: "calc(100% - 24px)", top: 178 }}
         >
           <MatcherTooltip
-            onDismiss={() => setShowTooltip(false)}
-            onAccept={() => setShowTooltip(false)}
+            content={tooltipConfig.content}
+            primaryLabel={tooltipConfig.primaryLabel}
+            secondaryLabel={tooltipConfig.secondaryLabel}
+            onPrimary={() => { tooltipConfig.onPrimary?.(); dismissTooltip(); }}
+            onSecondary={dismissTooltip}
           />
         </div>
       )}
@@ -87,7 +109,7 @@ export default function SidePanel() {
             </div>
             <Separator />
             <div className="p-5 shrink-0">
-              <MatcherCard onChatClick={matcherChatActive ? undefined : activateMatcherChat} />
+              <MatcherCard onChatClick={matcherChatActive ? undefined : () => activateMatcherChat(activePhase >= 3 ? "matching" : "requirements")} />
             </div>
             <Separator />
             <div className="flex flex-col">

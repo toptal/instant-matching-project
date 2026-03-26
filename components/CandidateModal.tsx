@@ -30,6 +30,7 @@ type Props = {
   onClose: () => void;
   onDecide: (index: number, decision: Decision) => void;
   onNavigate: (index: number) => void;
+  scheduleEnabled?: boolean;
 };
 
 const NOT_A_FIT_REASONS = [
@@ -40,7 +41,7 @@ const NOT_A_FIT_REASONS = [
   "Other",
 ];
 
-export default function CandidateModal({ candidates, currentIndex, decisions, onClose, onDecide, onNavigate }: Props) {
+export default function CandidateModal({ candidates, currentIndex, decisions, onClose, onDecide, onNavigate, scheduleEnabled }: Props) {
   const c = candidates[currentIndex];
   const decision = decisions[currentIndex];
   const [showReasons, setShowReasons] = useState(false);
@@ -267,7 +268,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
             <button
               onClick={() => { currentIndex > 0 && onNavigate(currentIndex - 1); setShowReasons(false); }}
               disabled={currentIndex === 0}
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
+              className="w-9 h-9 rounded flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ border: "1px solid #EBECED", color: currentIndex === 0 ? "#C4C6CA" : "#455065" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -279,39 +280,41 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
               <>
                 {/* Not a fit */}
                 <button
-                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded text-[14px] font-semibold transition-colors cursor-pointer"
                   style={{ border: "1px solid #EBECED", color: "#455065", background: showReasons ? "#F3F4F6" : "white" }}
                   onClick={handleNotAFit}
                 >
                   Not a Fit
                 </button>
 
-                {/* Schedule Interview — disabled primary with tooltip */}
+                {/* Schedule Interview */}
                 <div className="relative flex-1 group">
                   <button
-                    disabled
-                    className="w-full py-2.5 rounded-lg text-[14px] font-semibold text-white"
-                    style={{ background: "#204ECF", opacity: 0.5, cursor: "default" }}
+                    disabled={!scheduleEnabled}
+                    className="w-full py-2.5 rounded text-[14px] font-semibold text-white"
+                    style={{ background: "#204ECF", opacity: scheduleEnabled ? 1 : 0.5, cursor: scheduleEnabled ? "pointer" : "default" }}
                   >
                     Schedule Interview
                   </button>
-                  <div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
-                    style={{ background: "#1a1a2e" }}
-                  >
-                    We are confirming talent availability
+                  {!scheduleEnabled && (
                     <div
-                      className="absolute top-full left-1/2 -translate-x-1/2"
-                      style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
-                    />
-                  </div>
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[160px] px-2.5 py-1.5 rounded text-[12px] leading-[18px] text-white text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                      style={{ background: "#1a1a2e" }}
+                    >
+                      We are confirming talent availability
+                      <div
+                        className="absolute top-full left-1/2 -translate-x-1/2"
+                        style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #1a1a2e" }}
+                      />
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
               <>
                 {/* Not a fit */}
                 <button
-                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded text-[14px] font-semibold transition-colors cursor-pointer"
                   style={{
                     border: "1px solid #EBECED",
                     color: decision === "not-a-fit" ? "#8A9099" : "#455065",
@@ -324,7 +327,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
 
                 {/* Interested */}
                 <button
-                  className="flex-1 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded text-[14px] font-semibold text-white transition-colors cursor-pointer"
                   style={{ background: "#03B080" }}
                   onClick={() => { setShowReasons(false); onDecide(currentIndex, "interested"); }}
                 >
@@ -337,7 +340,7 @@ export default function CandidateModal({ candidates, currentIndex, decisions, on
             <button
               onClick={() => { currentIndex < candidates.length - 1 && onNavigate(currentIndex + 1); setShowReasons(false); }}
               disabled={currentIndex === candidates.length - 1}
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
+              className="w-9 h-9 rounded flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
               style={{ border: "1px solid #EBECED", color: currentIndex === candidates.length - 1 ? "#C4C6CA" : "#455065" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

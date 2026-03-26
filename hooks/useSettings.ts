@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 
 export type Settings = {
   showWelcomeScreen: boolean;
+  skipAnimations: boolean;
 };
 
 const DEFAULTS: Settings = {
   showWelcomeScreen: true,
+  skipAnimations: false,
 };
 
 const STORAGE_KEY = "im_settings";

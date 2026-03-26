@@ -17,15 +17,26 @@ export type StatusHistoryEntry = { decision: Decision; timestamp: Date };
 
 export type JdHistoryEntry = { variant: "initial" | "refined"; versionLabel: string };
 
+export type TooltipConfig = {
+  content: string;
+  primaryLabel: string;
+  secondaryLabel: string;
+  /** Optional callback when the primary button is clicked (before dismiss). */
+  onPrimary?: () => void;
+};
+
 interface PhaseContextValue {
   activePhase: number;
   phaseLabel: string;
   setActivePhase: (n: number) => void;
-  tooltipTriggerCount: number;
-  triggerMatcherTooltip: () => void;
+  // Tooltip
+  tooltipConfig: TooltipConfig | null;
+  triggerTooltip: (config: TooltipConfig) => void;
+  dismissTooltip: () => void;
   // Matcher chat
   matcherChatActive: boolean;
-  activateMatcherChat: () => void;
+  matcherScenarioType: "requirements" | "matching";
+  activateMatcherChat: (type?: "requirements" | "matching") => void;
   deactivateMatcherChat: () => void;
   // Job Details — live state synced from thread snippets
   jdVariant: "initial" | "refined" | null;
@@ -47,15 +58,20 @@ interface PhaseContextValue {
   interestedCount: number;
   // Status history per candidate id
   statusHistory: Record<string, StatusHistoryEntry[]>;
+  // Whether the Schedule Interview button should be enabled
+  scheduleInterviewEnabled: boolean;
+  enableScheduleInterview: () => void;
 }
 
 const PhaseContext = createContext<PhaseContextValue>({
   activePhase: 1,
   phaseLabel: "Draft Requirements",
   setActivePhase: () => {},
-  tooltipTriggerCount: 0,
-  triggerMatcherTooltip: () => {},
+  tooltipConfig: null,
+  triggerTooltip: () => {},
+  dismissTooltip: () => {},
   matcherChatActive: false,
+  matcherScenarioType: "requirements",
   activateMatcherChat: () => {},
   deactivateMatcherChat: () => {},
   jdVariant: null,
@@ -73,12 +89,15 @@ const PhaseContext = createContext<PhaseContextValue>({
   setCandidateDecision: () => {},
   interestedCount: 0,
   statusHistory: {},
+  scheduleInterviewEnabled: false,
+  enableScheduleInterview: () => {},
 });
 
 export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [activePhase, setActivePhase] = useState(1);
-  const [tooltipTriggerCount, setTooltipTriggerCount] = useState(0);
+  const [tooltipConfig, setTooltipConfig] = useState<TooltipConfig | null>(null);
   const [matcherChatActive, setMatcherChatActive] = useState(false);
+  const [matcherScenarioType, setMatcherScenarioType] = useState<"requirements" | "matching">("requirements");
   const [jdVariant, setJdVariant] = useState<"initial" | "refined" | null>(null);
   const [jdVersionLabel, setJdVersionLabel] = useState<string | null>(null);
   const [jdHistory, setJdHistory] = useState<JdHistoryEntry[]>([]);
@@ -89,15 +108,21 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
   const [matcherRevealedIds, setMatcherRevealedIds] = useState<string[]>([]);
   const [candidateDecisions, setCandidateDecisions] = useState<Record<string, Decision>>({});
   const [statusHistory, setStatusHistory] = useState<Record<string, StatusHistoryEntry[]>>({});
+  const [scheduleInterviewEnabled, setScheduleInterviewEnabled] = useState(false);
 
   // Mutable pointer — not state — so revealNextBatch reads current value synchronously.
   const nextCandidateIndex = useRef(0);
 
-  function triggerMatcherTooltip() {
-    setTooltipTriggerCount((n) => n + 1);
+  function triggerTooltip(config: TooltipConfig) {
+    setTooltipConfig(config);
   }
 
-  function activateMatcherChat() {
+  function dismissTooltip() {
+    setTooltipConfig(null);
+  }
+
+  function activateMatcherChat(type: "requirements" | "matching" = "requirements") {
+    setMatcherScenarioType(type);
     setMatcherChatActive(true);
   }
 
@@ -154,9 +179,11 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         activePhase,
         phaseLabel: PHASE_LABELS[activePhase],
         setActivePhase,
-        tooltipTriggerCount,
-        triggerMatcherTooltip,
+        tooltipConfig,
+        triggerTooltip,
+        dismissTooltip,
         matcherChatActive,
+        matcherScenarioType,
         activateMatcherChat,
         deactivateMatcherChat,
         jdVariant,
@@ -174,6 +201,8 @@ export function PhaseProvider({ children }: { children: React.ReactNode }) {
         setCandidateDecision,
         interestedCount,
         statusHistory,
+        scheduleInterviewEnabled,
+        enableScheduleInterview: () => setScheduleInterviewEnabled(true),
       }}
     >
       {children}
